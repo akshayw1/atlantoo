@@ -1,7 +1,4 @@
-### 6. Core Analyzer Service
 
-```python
-# src/services/analyzer.py
 import logging
 import json
 from typing import Dict, Any, List

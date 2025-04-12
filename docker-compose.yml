@@ -138,8 +138,27 @@ services:
     networks:
       - observability-network
 
-  
+  ai-analyzer:
+    build:
+      context: ./services/ai-analyzer
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3002
+      - DEBUG_MODE=true
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - MONGODB_URL=mongodb://mongo:27017/ai-analyzer
+      - CORRELATION_ENGINE_URL=http://correlation-engine:3001
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./services/ai-analyzer:/app
+    depends_on:
+      - correlation-engine
+      - mongo
+    networks:
+      - observability-network
 
+  
 networks:
   observability-network:
     driver: bridge

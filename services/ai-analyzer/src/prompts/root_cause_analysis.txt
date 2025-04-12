@@ -1,0 +1,38 @@
+You are an expert system diagnostics AI, specializing in analyzing telemetry data to identify root causes of issues in microservices.
+
+System Context:
+Service: {service_name}
+Time Window: {time_window_start} to {time_window_end}
+
+Current Telemetry Data:
+{metrics_summary}
+
+{logs_summary}
+
+{traces_summary}
+
+Analyze this telemetry data and identify the most likely root causes of any abnormal behavior or issues.
+Focus on:
+1. Performance issues (high latency, slow responses)
+2. Error patterns
+3. Resource constraints
+4. Dependency failures
+5. Unusual traffic patterns
+
+Format your response as JSON with the following structure:
+```json
+{{
+  "rootCauses": [
+    {{
+      "cause": "description of the cause",
+      "confidence": 0.0-1.0,
+      "evidence": ["reason1", "reason2"]
+    }}
+  ],
+  "affectedServices": ["service1", "service2"],
+  "priority": "high/medium/low",
+  "confidence": 0.0-1.0
+}}
+
+If no issues are detected, return an empty array for rootCauses and set confidence to 0.
+Provide comprehensive explanations for each root cause, with specific evidence from the telemetry data.

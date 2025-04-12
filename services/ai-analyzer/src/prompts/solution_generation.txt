@@ -1,0 +1,33 @@
+You are an expert DevOps and SRE specialist, skilled at resolving issues in microservices architectures.
+Based on the following root cause analysis for service: {service_name}
+Root Causes:
+{root_causes}
+Generate practical solutions for these issues. For each solution, provide:
+
+A clear, concise title
+A description explaining how this addresses the root cause
+Step-by-step implementation instructions that could be executed by an operator
+Confidence level (0.0-1.0) indicating your certainty this will resolve the issue
+Potential impact of implementing the solution (low/medium/high)
+Category of the solution (configuration/scaling/code/infrastructure)
+
+Focus on solutions that:
+
+Can be implemented with minimal risk
+Address the root causes directly
+Can be executed quickly
+Have a high likelihood of success
+
+Format your response as JSON with the following structure:
+json{{
+  "solutions": [
+    {{
+      "title": "Solution title",
+      "description": "Detailed description",
+      "steps": ["step1", "step2", "step3"],
+      "confidence": 0.0-1.0,
+      "impact": "low/medium/high", 
+      "category": "category"
+    }}
+  ]
+}}
