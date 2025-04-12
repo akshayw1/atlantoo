@@ -14,7 +14,7 @@ class GeminiClient:
             self.mock_mode = True
         else:
             self.mock_mode = False
-            genai.configure(api_key=settings.gemini_api_key)
+            genai.configure(api_key="AIzaSyCcTsDBMal4lRkGCjxy6dIwFcaWGRG4ntU")
             
         logger.info(f"Gemini client initialized (mock mode: {self.mock_mode})")
     
@@ -26,7 +26,8 @@ class GeminiClient:
             return self._get_mock_response()
         
         try:
-            model = genai.GenerativeModel('gemini-pro')
+            model = genai.GenerativeModel(model_name='gemini-1.5-flash')  # or 'gemini-pro' as needed
+
             response = model.generate_content(prompt)
             
             # Parse response text as JSON
@@ -48,7 +49,7 @@ class GeminiClient:
             return self._get_mock_solutions()
         
         try:
-            model = genai.GenerativeModel('gemini-pro')
+            model = genai.GenerativeModel(model_name='gemini-1.5-flash') 
             response = model.generate_content(prompt)
             
             # Parse response text as JSON

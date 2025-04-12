@@ -195,3 +195,6 @@ Format your response as JSON with the following structure:
     }}
   ]
 }}"""
+
+
+prompt_builder = PromptBuilder()

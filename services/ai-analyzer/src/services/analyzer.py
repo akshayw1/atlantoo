@@ -28,6 +28,8 @@ class AnalyzerService:
             
             # 2. Build prompt for Gemini API
             prompt = prompt_builder.build_root_cause_analysis_prompt(correlation_data)
+
+            print(f"Analyzing correlation {correlation_id} with prompt: {prompt}")
             
             # 3. Get analysis from Gemini
             analysis_result = await gemini_client.analyze_telemetry(prompt)
@@ -83,8 +85,11 @@ class AnalyzerService:
         try:
             url = f"{self.correlation_engine_url}/api/correlations/{correlation_id}"
             response = requests.get(url)
+
+            print(f"Fetching correlation data from {url}")
             
             if response.status_code == 200:
+                logger.info(f"Successfully fetched correlation data for {correlation_id}")
                 return response.json()
             else:
                 logger.error(f"Failed to get correlation {correlation_id}: {response.status_code}")
