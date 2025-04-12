@@ -1,0 +1,49 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+exporters:
+  debug:
+    verbosity: detailed
+  # Export metrics to VictoriaMetrics
+  prometheusremotewrite:
+    endpoint: "http://victoria-metrics:8428/api/v1/write"
+    tls:
+      insecure: true
+  
+  # Export traces to Jaeger
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+  
+  # Export logs to ElasticSearch
+  elasticsearch:
+    endpoints: ["http://elasticsearch:9200"]
+    logs_index: "logs-%{[service.name]}"
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/jaeger, debug]
+    
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheusremotewrite, debug]
+    
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [elasticsearch, debug]

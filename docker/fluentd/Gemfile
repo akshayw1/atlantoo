@@ -1,0 +1,4 @@
+source 'https://rubygems.org'
+
+gem 'fluentd', '~>1.14.0'
+gem 'fluent-plugin-elasticsearch', '~>4.3.3'  # Use an older version compatible with Ruby 2.7

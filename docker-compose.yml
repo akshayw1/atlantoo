@@ -1,0 +1,152 @@
+version: '3.8'
+
+services:
+  # Telemetry collection
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    volumes:
+      - ./docker/config/otel-collector.yaml:/etc/otelcol-contrib/config.yaml
+    ports:
+      - "4317:4317"  # OTLP gRPC
+      - "4318:4318"  # OTLP HTTP
+      - "8888:8888"  # Metrics
+    networks:
+      - observability-network
+    depends_on:
+      - jaeger
+      - victoria-metrics
+
+  # Metrics
+  victoria-metrics:
+    image: victoriametrics/victoria-metrics:latest
+    ports:
+      - "8428:8428"
+    volumes:
+      - victoria-metrics-data:/victoria-metrics-data
+    command:
+      - "--storageDataPath=/victoria-metrics-data"
+      - "--httpListenAddr=:8428"
+    networks:
+      - observability-network
+
+  # Logs
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - observability-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.0
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - observability-network
+
+  fluentd:
+    image: fluent/fluentd:v1.14
+    volumes:
+      - ./docker/config/fluentd/conf:/fluentd/etc
+    ports:
+      - "24224:24224"
+    depends_on:
+      - elasticsearch
+    networks:
+      - observability-network
+  # Traces
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"  # UI
+      - "14250:14250"  # Collector
+      - "14268:14268"  # HTTP collector
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    networks:
+      - observability-network
+
+  # Visualization
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./docker/config/grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - victoria-metrics
+      - jaeger
+      - elasticsearch
+    networks:
+      - observability-network
+
+
+  service-a:
+    build: 
+      context: ./services/service-a
+    environment:
+      - NODE_ENV=development
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=service-a
+      - FLUENTD_HOST=fluentd
+      - FLUENTD_PORT=24224
+      - CORRELATION_ENGINE_URL=http://correlation-engine:3001
+    ports:
+      - "8080:8080"
+    depends_on:
+      - otel-collector
+      - fluentd
+      - correlation-engine
+    networks:
+      - observability-network
+
+
+  # Correlation Engine
+  correlation-engine:
+    build:
+      context: ./services/correlation-engine
+    environment:
+      - NODE_ENV=development
+      - JAEGER_URL=http://jaeger:16686
+      - VICTORIA_METRICS_URL=http://victoria-metrics:8428
+      - MONGODB_URL=mongodb://mongo:27017/correlation-engine
+      - LOG_LEVEL=debug
+    ports:
+      - "3001:3001"
+    depends_on:
+      - jaeger
+      - victoria-metrics
+      - mongo
+    networks:
+      - observability-network
+
+  # MongoDB for storing correlation data
+  mongo:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - observability-network
+
+  
+
+networks:
+  observability-network:
+    driver: bridge
+
+volumes:
+  elasticsearch-data:
+  victoria-metrics-data:
+  grafana-data:
+  mongo-data:
+
