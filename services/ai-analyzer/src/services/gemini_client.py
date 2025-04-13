@@ -1,6 +1,8 @@
 # src/services/gemini_client.py
-import google.generativeai as genai
 import logging
+import requests
+import json
+import re
 from typing import Dict, Any
 
 from config import settings
@@ -9,12 +11,13 @@ logger = logging.getLogger("ai-analyzer.gemini")
 
 class GeminiClient:
     def __init__(self):
-        if not settings.gemini_api_key:
+        self.api_key = settings.gemini_api_key
+        if not self.api_key:
             logger.warning("No Gemini API key provided! Using mock responses for development.")
             self.mock_mode = True
         else:
             self.mock_mode = False
-            genai.configure(api_key="AIzaSyCcTsDBMal4lRkGCjxy6dIwFcaWGRG4ntU")
+            self.base_url = "https://generativelanguage.googleapis.com/v1beta/models"
             
         logger.info(f"Gemini client initialized (mock mode: {self.mock_mode})")
     
@@ -26,12 +29,32 @@ class GeminiClient:
             return self._get_mock_response()
         
         try:
-            model = genai.GenerativeModel(model_name='gemini-1.5-flash')  # or 'gemini-pro' as needed
-
-            response = model.generate_content(prompt)
+            url = f"{self.base_url}/gemini-1.5-flash:generateContent?key={self.api_key}"
+            
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {
+                                "text": prompt
+                            }
+                        ]
+                    }
+                ]
+            }
+            
+            headers = {
+                "Content-Type": "application/json"
+            }
+            
+            response = requests.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            
+            response_data = response.json()
+            text = response_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
             
             # Parse response text as JSON
-            return self._parse_response(response.text)
+            return self._parse_response(text)
             
         except Exception as e:
             logger.error(f"Error calling Gemini API: {str(e)}")
@@ -49,11 +72,32 @@ class GeminiClient:
             return self._get_mock_solutions()
         
         try:
-            model = genai.GenerativeModel(model_name='gemini-1.5-flash') 
-            response = model.generate_content(prompt)
+            url = f"{self.base_url}/gemini-1.5-flash:generateContent?key={self.api_key}"
+            
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {
+                                "text": prompt
+                            }
+                        ]
+                    }
+                ]
+            }
+            
+            headers = {
+                "Content-Type": "application/json"
+            }
+            
+            response = requests.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            
+            response_data = response.json()
+            text = response_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
             
             # Parse response text as JSON
-            return self._parse_response(response.text)
+            return self._parse_response(text)
             
         except Exception as e:
             logger.error(f"Error calling Gemini API: {str(e)}")
@@ -68,9 +112,6 @@ class GeminiClient:
         """
         try:
             # Extract JSON portion from response
-            import json
-            import re
-            
             # Find text between triple backticks
             json_match = re.search(r'```json\n(.*?)\n```', text, re.DOTALL)
             if json_match:

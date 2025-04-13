@@ -1,330 +1,312 @@
-// src/components/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Grid,
-  Paper,
+  Card,
+  CardContent,
+  CardHeader,
   Typography,
   Box,
   Button,
-  Card,
-  CardContent,
-  CardActions,
-  CircularProgress,
-  Alert,
+  Divider,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Paper,
+  Chip,
 } from '@mui/material';
 import {
-  Timeline as TimelineIcon,
-  Error as ErrorIcon,
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
+  Error as ErrorIcon,
+  TrendingUp as TrendingUpIcon,
+  ArrowDropUp as ArrowUpIcon,
+  ArrowDropDown as ArrowDownIcon,
 } from '@mui/icons-material';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+import { useToast } from '../context/ToastContext';
+import Loader from './Loader';
 import api from '../services/api';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { showError } = useToast();
+  
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [systemStatus, setSystemStatus] = useState({});
+  const [services, setServices] = useState([]);
   const [incidents, setIncidents] = useState([]);
-  const [metrics, setMetrics] = useState([]);
-
+  const [metrics, setMetrics] = useState({ service: '', data: [] });
+  
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        setError(null);
-
+        
         // Get system status
-        const status = await api.getSystemStatus();
-        setSystemStatus(status);
-
+        const systemStatus = await api.getSystemStatus();
+        
+        // Transform system status into service list
+        const serviceList = [
+          {
+            name: 'Correlation Engine',
+            status: systemStatus.correlation.status === 'UP' ? 'healthy' : 'critical',
+            details: systemStatus.correlation.details || {}
+          },
+          {
+            name: 'AI Analyzer',
+            status: systemStatus.analyzer.status === 'UP' ? 'healthy' : 'critical',
+            details: systemStatus.analyzer.details || {}
+          }
+        ];
+        
+        setServices(serviceList);
+        
         // Get active incidents
-        const incidentsResponse = await api.getIncidents('active', 5);
-        setIncidents(incidentsResponse.incidents || []);
-
-        // Get metrics (simulated data for now)
-        setMetrics(generateDummyMetrics());
-
+        const activeIncidents = await api.getIncidents('active', 5);
+        setIncidents(activeIncidents);
+        
+        // Get metrics for a service (using the first service from the list for demo)
+        if (serviceList.length > 0) {
+          const serviceName = 'service-a'; // Default to service-a for now
+          const now = new Date();
+          const timeRange = {
+            start: new Date(now.getTime() - 24 * 60 * 60 * 1000), // 24 hours ago
+            end: now
+          };
+          
+          const metricsData = await api.getMetrics(serviceName, timeRange);
+          setMetrics({
+            service: serviceName,
+            data: metricsData
+          });
+        }
+        
         setLoading(false);
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-        setError('Failed to load dashboard data. Please try again later.');
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        showError('Failed to load dashboard data');
         setLoading(false);
       }
     };
-
+    
     fetchDashboardData();
-
-    // Refresh dashboard data every minute
-    const interval = setInterval(fetchDashboardData, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const generateDummyMetrics = () => {
-    return {
-      requestRate: [
-        { name: '9:00', service_a: 45, service_b: 32 },
-        { name: '10:00', service_a: 58, service_b: 38 },
-        { name: '11:00', service_a: 62, service_b: 40 },
-        { name: '12:00', service_a: 78, service_b: 45 },
-        { name: '13:00', service_a: 91, service_b: 53 },
-        { name: '14:00', service_a: 74, service_b: 49 },
-      ],
-      errorRate: [
-        { name: '9:00', service_a: 2, service_b: 1 },
-        { name: '10:00', service_a: 3, service_b: 2 },
-        { name: '11:00', service_a: 5, service_b: 3 },
-        { name: '12:00', service_a: 1, service_b: 2 },
-        { name: '13:00', service_a: 0, service_b: 1 },
-        { name: '14:00', service_a: 3, service_b: 2 },
-      ],
-    };
+  }, [showError]);
+  
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'healthy':
+        return <CheckCircleIcon color="success" />;
+      case 'warning':
+        return <WarningIcon color="warning" />;
+      case 'critical':
+        return <ErrorIcon color="error" />;
+      default:
+        return <CheckCircleIcon color="success" />;
+    }
   };
-
+  
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+  
   if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
-        <CircularProgress />
-      </Box>
-    );
+    return <Loader message="Loading dashboard data..." />;
   }
-
-  if (error) {
-    return (
-      <Box m={3}>
-        <Alert severity="error">{error}</Alert>
-      </Box>
-    );
-  }
-
+  
   return (
-    <Box p={3}>
+    <Box>
       <Typography variant="h4" gutterBottom>
-        Platform Overview
+        System Overview
       </Typography>
-
-      {/* System Status */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          System Status
-        </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
+      
+      <Grid container spacing={3}>
+        {/* Service Status Cards */}
+        {services.map((service) => (
+          <Grid item xs={12} sm={6} md={4} key={service.name}>
             <Card>
               <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Correlation Engine
-                </Typography>
-                <Box display="flex" alignItems="center">
-                  {systemStatus.correlation?.status === 'UP' ? (
-                    <CheckCircleIcon color="success" />
-                  ) : (
-                    <ErrorIcon color="error" />
-                  )}
-                  <Typography variant="h6" component="div" sx={{ ml: 1 }}>
-                    {systemStatus.correlation?.status || 'UNKNOWN'}
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  {getStatusIcon(service.status)}
+                  <Typography variant="h6" sx={{ ml: 1 }}>
+                    {service.name}
                   </Typography>
                 </Box>
+                <Divider sx={{ my: 1 }} />
+                <Grid container spacing={2}>
+                  <Grid item xs={4}>
+                    <Typography variant="body2" color="text.secondary">
+                      Status
+                    </Typography>
+                    <Typography variant="body1">
+                      <Chip 
+                        size="small" 
+                        label={service.status.toUpperCase()} 
+                        color={service.status === 'healthy' ? 'success' : service.status === 'warning' ? 'warning' : 'error'}
+                      />
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={8}>
+                    <Typography variant="body2" color="text.secondary">
+                      Last Updated
+                    </Typography>
+                    <Typography variant="body1">
+                      {service.details.lastChecked ? formatDate(service.details.lastChecked) : 'N/A'}
+                    </Typography>
+                  </Grid>
+                </Grid>
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  AI Analyzer
-                </Typography>
-                <Box display="flex" alignItems="center">
-                  {systemStatus.analyzer?.status === 'UP' ? (
-                    <CheckCircleIcon color="success" />
-                  ) : (
-                    <ErrorIcon color="error" />
-                  )}
-                  <Typography variant="h6" component="div" sx={{ ml: 1 }}>
-                    {systemStatus.analyzer?.status || 'UNKNOWN'}
+        ))}
+        
+        {/* Active Incidents */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ height: '100%' }}>
+            <CardHeader 
+              title="Active Incidents"
+              action={
+                <Button 
+                  size="small" 
+                  variant="text" 
+                  onClick={() => navigate('/incidents')}
+                >
+                  View All
+                </Button>
+              }
+            />
+            <Divider />
+            <CardContent sx={{ maxHeight: 300, overflow: 'auto' }}>
+              {incidents.length > 0 ? (
+                <List>
+                  {incidents.map((incident) => (
+                    <ListItem
+                      key={incident.id}
+                      button
+                      onClick={() => navigate(`/incidents/${incident.id}`)}
+                      sx={{ py: 1 }}
+                    >
+                      <ListItemIcon>
+                        {incident.severity === 'critical' ? (
+                          <ErrorIcon color="error" />
+                        ) : (
+                          <WarningIcon color="warning" />
+                        )}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={incident.title}
+                        secondary={`Service: ${incident.service} | Detected: ${formatDate(incident.detectedAt)}`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <Box sx={{ p: 3, textAlign: 'center' }}>
+                  <Typography variant="body1" color="text.secondary">
+                    No active incidents
                   </Typography>
                 </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Service A
-                </Typography>
-                <Box display="flex" alignItems="center">
-                  <CheckCircleIcon color="success" />
-                  <Typography variant="h6" component="div" sx={{ ml: 1 }}>
-                    UP
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Database
-                </Typography>
-                <Box display="flex" alignItems="center">
-                  <CheckCircleIcon color="success" />
-                  <Typography variant="h6" component="div" sx={{ ml: 1 }}>
-                    UP
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+              )}
+            </CardContent>
+          </Paper>
         </Grid>
-      </Paper>
-
-      {/* Metrics Visualization */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6">Key Metrics</Typography>
-          <Button
-            variant="outlined"
-            startIcon={<TimelineIcon />}
-            onClick={() => navigate('/metrics')}
-          >
-            View All Metrics
-          </Button>
-        </Box>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Typography variant="subtitle1" gutterBottom>
-              Request Rate
-            </Typography>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={metrics.requestRate}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="service_a" stroke="#1976d2" name="Service A" />
-                <Line type="monotone" dataKey="service_b" stroke="#03a9f4" name="Service B" />
-              </LineChart>
-            </ResponsiveContainer>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="subtitle1" gutterBottom>
-              Error Rate
-            </Typography>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={metrics.errorRate}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="service_a" fill="#f44336" name="Service A" />
-                <Bar dataKey="service_b" fill="#ff9800" name="Service B" />
-              </BarChart>
-            </ResponsiveContainer>
-          </Grid>
+        
+        {/* Metrics Chart */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ height: '100%' }}>
+            <CardHeader 
+              title={`${metrics.service} Request Rate`}
+              action={
+                <Button 
+                  size="small" 
+                  variant="text" 
+                  onClick={() => navigate('/metrics')}
+                >
+                  View Details
+                </Button>
+              }
+            />
+            <Divider />
+            <CardContent sx={{ height: 300 }}>
+              {metrics.data.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={metrics.data}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="timestamp" tickFormatter={formatDate} />
+                    <YAxis />
+                    <Tooltip labelFormatter={formatDate} />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke="#1976d2" 
+                      name="Requests/min" 
+                      dot={false}
+                      activeDot={{ r: 8 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <Box sx={{ p: 3, textAlign: 'center', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Typography variant="body1" color="text.secondary">
+                    No metrics data available
+                  </Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Paper>
         </Grid>
-      </Paper>
-
-      {/* Active Incidents */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6">Active Incidents</Typography>
-          <Button
-            variant="outlined"
-            startIcon={<ErrorIcon />}
-            onClick={() => navigate('/incidents')}
-            color="error"
-          >
-            View All Incidents
-          </Button>
-        </Box>
-        {incidents.length === 0 ? (
-          <Alert severity="success">No active incidents! Everything is running smoothly.</Alert>
-        ) : (
-          <Grid container spacing={2}>
-            {incidents.map((incident) => (
-              <Grid item xs={12} sm={6} md={4} key={incident._id || incident.id}>
-                <Card>
-                  <CardContent>
-                    <Box display="flex" alignItems="center" mb={1}>
-                      {incident.severity === 'critical' ? (
-                        <ErrorIcon color="error" />
-                      ) : (
-                        <WarningIcon color="warning" />
-                      )}
-                      <Typography variant="h6" component="div" sx={{ ml: 1 }}>
-                        {incident.title || `Incident in ${incident.service}`}
-                      </Typography>
-                    </Box>
-                    <Typography color="textSecondary" gutterBottom>
-                      Service: {incident.service}
-                    </Typography>
-                    <Typography color="textSecondary" gutterBottom>
-                      Started: {new Date(incident.startTime).toLocaleString()}
-                    </Typography>
-                    <Typography variant="body2" component="div">
-                      Status: {incident.status}
-                    </Typography>
-                  </CardContent>
-                  <CardActions>
-                    <Button size="small" onClick={() => navigate(`/incidents/${incident._id || incident.id}`)}>
-                      View Details
-                    </Button>
-                  </CardActions>
-                </Card>
+        
+        {/* Quick Actions */}
+        <Grid item xs={12}>
+          <Paper>
+            <CardHeader title="Quick Actions" />
+            <Divider />
+            <CardContent>
+              <Grid container spacing={2}>
+                <Grid item>
+                  <Button 
+                    variant="contained" 
+                    onClick={() => navigate('/correlations')}
+                    startIcon={<TrendingUpIcon />}
+                  >
+                    New Correlation
+                  </Button>
+                </Grid>
+                <Grid item>
+                  <Button 
+                    variant="contained" 
+                    onClick={() => navigate('/logs')}
+                  >
+                    View Logs
+                  </Button>
+                </Grid>
+                <Grid item>
+                  <Button 
+                    variant="contained" 
+                    onClick={() => navigate('/traces')}
+                  >
+                    View Traces
+                  </Button>
+                </Grid>
+                <Grid item>
+                  <Button 
+                    variant="contained" 
+                    color="secondary"
+                    onClick={() => navigate('/incidents')}
+                    startIcon={<ErrorIcon />}
+                  >
+                    Manage Incidents
+                  </Button>
+                </Grid>
               </Grid>
-            ))}
-          </Grid>
-        )}
-      </Paper>
-
-      {/* Quick Actions */}
-      <Paper sx={{ p: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Quick Actions
-        </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Button 
-              variant="contained" 
-              fullWidth 
-              onClick={() => navigate('/correlations')}
-            >
-              Trigger Correlation
-            </Button>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Button 
-              variant="contained" 
-              fullWidth 
-              onClick={() => navigate('/analysis')}
-            >
-              Run AI Analysis
-            </Button>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Button 
-              variant="contained" 
-              fullWidth 
-              onClick={() => navigate('/logs')}
-            >
-              View Recent Logs
-            </Button>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Button 
-              variant="contained" 
-              fullWidth 
-              onClick={() => navigate('/traces')}
-            >
-              Explore Traces
-            </Button>
-          </Grid>
+            </CardContent>
+          </Paper>
         </Grid>
-      </Paper>
+      </Grid>
     </Box>
   );
 };

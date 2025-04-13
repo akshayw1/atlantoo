@@ -1,8 +1,7 @@
-// src/services/api.js
 import axios from 'axios';
 
-const CORRELATION_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-const ANALYZER_API_URL = process.env.REACT_APP_ANALYZER_URL || 'http://localhost:3002/api';
+const CORRELATION_API_URL =  import.meta.env.VITE_APP_API_URL || 'http://localhost:3001/api';
+const ANALYZER_API_URL = import.meta.env.VITE_APP_ANALYZER_URL || 'http://localhost:3002/api';
 
 const api = {
   // Metrics API
@@ -85,6 +84,11 @@ const api = {
     const response = await axios.post(`${CORRELATION_API_URL}/correlations/time-window`, payload);
     return response.data;
   },
+  
+  createCorrelationByTraceId: async (traceId) => {
+    const response = await axios.post(`${CORRELATION_API_URL}/correlations/trace-id/${traceId}`);
+    return response.data;
+  },
 
   // AI Analysis API
   getAnalyses: async () => {
@@ -99,6 +103,11 @@ const api = {
 
   analyzeCorrelation: async (correlationId) => {
     const response = await axios.post(`${ANALYZER_API_URL}/analyze/correlation/${correlationId}`);
+    return response.data;
+  },
+  
+  analyzeIncident: async (incidentId) => {
+    const response = await axios.post(`${ANALYZER_API_URL}/analyze/incident/${incidentId}`);
     return response.data;
   },
 

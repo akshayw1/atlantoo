@@ -1,48 +1,63 @@
-// src/App.js
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Box, CssBaseline, Toolbar } from '@mui/material';
-import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import Correlations from './components/Correlations';
-import Analysis from './components/Analysis';
+import React, { useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { Box, Toolbar } from '@mui/material';
 
-// These would be imported in a full implementation
-const Metrics = () => <Box p={3}>Metrics Explorer</Box>;
-const Logs = () => <Box p={3}>Logs Explorer</Box>;
-const Traces = () => <Box p={3}>Traces Explorer</Box>;
-const Incidents = () => <Box p={3}>Incidents Management</Box>;
-const Remediation = () => <Box p={3}>Remediation Actions</Box>;
+// Import layouts
+import Header from './components/layout/Header';
+import Sidebar from './components/layout/Sidebar';
+
+// Import pages
+import Dashboard from './components/Dashboard';
+import Metrics from './components/Metrics';
+import Logs from './components/Logs';
+import Traces from './components/Traces';
+import IncidentList from './components/IncidentList';
+import IncidentDetail from './components/IncidentDetail';
+import CorrelationList from './components/CorrelationList';
+import CorrelationDetail from './components/CorrelationDetail';
+import AnalysisList from './components/AnalysisList';
+import AnalysisDetail from './components/AnalysisDetail';
+import Remediation from './components/Remediation';
+import SystemStatus from './components/SystemStatus';
 
 function App() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
   return (
-    <Router>
-      <Box sx={{ display: 'flex' }}>
-        <CssBaseline />
-        <Sidebar />
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            height: '100vh',
-            overflow: 'auto',
-            backgroundColor: (theme) => theme.palette.background.default,
-          }}
-        >
-          <Toolbar />
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/metrics" element={<Metrics />} />
-            <Route path="/logs" element={<Logs />} />
-            <Route path="/traces" element={<Traces />} />
-            <Route path="/incidents" element={<Incidents />} />
-            <Route path="/correlations" element={<Correlations />} />
-            <Route path="/analysis" element={<Analysis />} />
-            <Route path="/remediation" element={<Remediation />} />
-          </Routes>
-        </Box>
+    <Box sx={{ display: 'flex' }}>
+      <Header handleDrawerToggle={handleDrawerToggle} />
+      <Sidebar mobileOpen={mobileOpen} handleDrawerToggle={handleDrawerToggle} />
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          width: { sm: `calc(100% - 240px)` },
+          minHeight: '100vh',
+          backgroundColor: 'background.default',
+        }}
+      >
+        <Toolbar /> {/* This is spacing to push content below the app bar */}
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/metrics" element={<Metrics />} />
+          <Route path="/logs" element={<Logs />} />
+          <Route path="/traces" element={<Traces />} />
+          <Route path="/incidents" element={<IncidentList />} />
+          <Route path="/incidents/:incidentId" element={<IncidentDetail />} />
+          <Route path="/correlations" element={<CorrelationList />} />
+          <Route path="/correlations/:correlationId" element={<CorrelationDetail />} />
+          <Route path="/analysis" element={<AnalysisList />} />
+          <Route path="/analysis/:analysisId" element={<AnalysisDetail />} />
+          <Route path="/remediation" element={<Remediation />} />
+          <Route path="/system-status" element={<SystemStatus />} />
+        </Routes>
       </Box>
-    </Router>
+    </Box>
   );
 }
 

@@ -118,6 +118,7 @@ services:
       - JAEGER_URL=http://jaeger:16686
       - VICTORIA_METRICS_URL=http://victoria-metrics:8428
       - MONGODB_URL=mongodb://mongo:27017/correlation-engine
+      - AI_ANALYZER_URL=http://ai-analyzer:3002
       - LOG_LEVEL=debug
     ports:
       - "3001:3001"
@@ -145,9 +146,16 @@ services:
       - HOST=0.0.0.0
       - PORT=3002
       - DEBUG_MODE=true
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_API_KEY=AIzaSyCcTsDBMal4lRkGCjxy6dIwFcaWGRG4ntU
       - MONGODB_URL=mongodb://mongo:27017/ai-analyzer
       - CORRELATION_ENGINE_URL=http://correlation-engine:3001
+      - SMTP_SERVER=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USERNAME=paulsanjaym@gmail.com
+      - SMTP_PASSWORD=idaw fzae qpiw ljod
+      - NOTIFICATION_FROM=paulsanjaym@gmail.com
+      - NOTIFICATION_RECIPIENTS=akshaywaghmarecc@gmail.com
+      - DASHBOARD_URL=${DASHBOARD_URL:-http://localhost:3000}
     ports:
       - "3002:3002"
     volumes:
@@ -157,6 +165,30 @@ services:
       - mongo
     networks:
       - observability-network
+
+  # dashboard-ui:
+  #   build:
+  #     context: ./dashboard-ui
+  #     dockerfile: Dockerfile.dev
+  #   container_name: observability-dashboard-dev
+  #   volumes:
+  #     - ./dashboard-ui:/app
+  #     # Don't overwrite node_modules with host directory
+  #     - /app/node_modules
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - NODE_ENV=development
+  #     - VITE_APP_API_URL=http://correlation-engine:3001
+  #     - VITE_APP_ANALYZER_URL=http://ai-analyzer:3002
+  #     - VITE_DEV_SERVER_PORT=3000
+  #     - CHOKIDAR_USEPOLLING=true  # For better hot reload in Docker
+  #   networks:
+  #     - observability-network
+  #   depends_on:
+  #     - correlation-engine
+  #     - ai-analyzer
+
 
   
 networks:

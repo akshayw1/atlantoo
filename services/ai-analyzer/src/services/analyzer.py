@@ -7,7 +7,9 @@ import requests
 from config import settings
 from services.gemini_client import gemini_client
 from services.prompt_builder import prompt_builder
-from db.repositories import save_analysis_result, update_incident_with_analysis
+from db.repositories import save_analysis_result, update_incident_with_analysis,update_analysis_with_solutions
+from services.notification import notification_service
+
 
 logger = logging.getLogger("ai-analyzer.analyzer")
 
@@ -37,7 +39,7 @@ class AnalyzerService:
             # 4. Add metadata to the result
             analysis_result["correlationId"] = correlation_id
             analysis_result["incidentId"] = correlation_data.get("incidentId")
-            analysis_result["serviceName"] = correlation_data.get("serviceName", "unknown")
+            analysis_result["serviceName"] = correlation_data.get("serviceName", "service-a")
             analysis_result["analysisType"] = "root-cause"
             
             # 5. Store the analysis result
@@ -50,6 +52,19 @@ class AnalyzerService:
             if analysis_result.get("rootCauses") and len(analysis_result["rootCauses"]) > 0:
                 solutions = await self.generate_solutions(analysis_result)
                 analysis_result["solutions"] = solutions.get("solutions", [])
+            # Update the stored analysis with solutions
+            if "_id" in saved_result:
+                # Convert ObjectId to string if it exists
+                analysis_id = str(saved_result["_id"]) if saved_result["_id"] else None
+                if analysis_id:
+                    await update_analysis_with_solutions(analysis_id, solutions.get("solutions", []))
+        
+            # Make sure we convert any ObjectId to strings for JSON serialization
+            if "_id" in analysis_result:
+                analysis_result["_id"] = str(analysis_result["_id"])
+
+            if analysis_result.get("rootCauses") or analysis_result.get("priority") == "high":
+                await notification_service.send_analysis_notification(analysis_result)
             
             return analysis_result
             

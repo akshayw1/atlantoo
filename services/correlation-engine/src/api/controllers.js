@@ -58,6 +58,25 @@ exports.getCorrelation = async (req, res) => {
   }
 };
 
+exports.getAllCorrelations = async (req, res) => {
+
+  try {
+  
+    
+    const correlations = await Correlation.find({});
+    
+    if (!correlations) {
+      return res.status(404).json({ error: 'Correlations not found' });
+    }
+    
+    res.status(200).json(correlations);
+  } catch (error) {
+    logger.error(`Error in getCorrelations: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
 // Incident controllers
 exports.getIncidents = async (req, res) => {
   try {
@@ -105,6 +124,43 @@ exports.getIncident = async (req, res) => {
       });
     } catch (error) {
       logger.error(`Error in getIncident: ${error.message}`);
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  exports.updateIncidentWithAnalysis = async (req, res) => {
+    try {
+      const { incidentId } = req.params;
+      const { analysis } = req.body;
+      
+      if (!analysis) {
+        return res.status(400).json({ error: 'Missing analysis data' });
+      }
+      
+      const incident = await Incident.findById(incidentId);
+      
+      if (!incident) {
+        return res.status(404).json({ error: 'Incident not found' });
+      }
+      
+      // Add analysis to incident metadata
+      if (!incident.metadata) {
+        incident.metadata = new Map();
+      }
+      
+      incident.metadata.set('analysisId', analysis.id);
+      incident.metadata.set('rootCauses', JSON.stringify(analysis.rootCauses));
+      incident.metadata.set('priority', analysis.priority);
+      incident.metadata.set('confidence', String(analysis.confidence));
+      
+      await incident.save();
+      
+      res.status(200).json({ 
+        success: true,
+        message: 'Incident updated with analysis'
+      });
+    } catch (error) {
+      logger.error(`Error in updateIncidentWithAnalysis: ${error.message}`);
       res.status(500).json({ error: error.message });
     }
   };

@@ -5,6 +5,8 @@ const config = require('./config');
 const routes = require('./api/routes');
 const db = require('./db');
 const logsClient = require('./services/telemetry/logs-client');
+const schedulerService = require('./services/scheduler-service');
+
 
 // Initialize logger
 const logger = pino({
@@ -52,11 +54,14 @@ app.use((err, req, res, next) => {
 db.connect().then(() => {
   app.listen(config.port, () => {
     logger.info(`Correlation Engine running on port ${config.port}`);
+    // Start the scheduler for continuous monitoring
+    schedulerService.start();
   });
 }).catch((err) => {
   logger.error('Failed to connect to database', err);
   process.exit(1);
 });
+
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
