@@ -1,54 +1,109 @@
 const mongoose = require('mongoose');
 
-const correlationSchema = new mongoose.Schema({
-  incidentId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Incident',
-    required: true 
+const AnomalySchema = new mongoose.Schema({
+  type: {
+    type: String,
+    required: true
   },
-  correlationId: { type: String, required: true, unique: true },
-  timeWindow: {
-    start: { type: Date, required: true },
-    end: { type: Date, required: true }
+  timestamp: {
+    type: Date,
+    required: true
   },
-  telemetry: {
-    traces: [{
-      traceId: { type: String, required: true },
-      serviceName: { type: String },
-      operationName: { type: String },
-      timestamp: { type: Date },
-      durationMs: { type: Number },
-      hasError: { type: Boolean }
-    }],
-    metrics: [{
-      name: { type: String, required: true },
-      labels: { type: Map, of: String },
-      values: [{
-        timestamp: { type: Date },
-        value: { type: Number }
-      }],
-      anomalyScore: { type: Number }
-    }],
-    logs: [{
-      level: { type: String },
-      message: { type: String },
-      timestamp: { type: Date },
-      service: { type: String },
-      traceId: { type: String },
-      attributes: { type: Map, of: String }
-    }]
+  detectionMethod: {
+    type: String,
+    required: true,
+    enum: ['threshold', 'trace_analysis', 'ai']
   },
-  analysisResults: {
-    rootCauses: [{
-      cause: { type: String },
-      confidence: { type: Number },
-      relatedEvents: [{ type: String }]
-    }],
-    impactedServices: [String],
-    anomalyDetected: { type: Boolean, default: false },
-    patternId: { type: String }
-  },
-  createdAt: { type: Date, default: Date.now }
+  metric: String,
+  value: Number,
+  threshold: Number,
+  endpoint: String
 });
 
-module.exports = mongoose.model('Correlation', correlationSchema);
+const CorrelationSchema = new mongoose.Schema({
+  // Correlation identifiers
+  correlationId: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  incidentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Incident',
+    default: null
+  },
+  
+  // Time range for this correlation
+  timeWindow: {
+    start: {
+      type: Date,
+      required: true
+    },
+    end: {
+      type: Date,
+      required: true
+    }
+  },
+  
+  // Summary of telemetry analyzed
+  telemetrySummary: {
+    traceCount: {
+      type: Number,
+      default: 0
+    },
+    logCount: {
+      type: Number,
+      default: 0
+    },
+    metricTypes: [String]
+  },
+  
+  // Detected anomalies
+  anomalies: [AnomalySchema],
+  
+  // AI analysis results
+  aiAnalysisStatus: {
+    type: String,
+    enum: ['pending', 'in_progress', 'completed', 'failed'],
+    default: 'pending'
+  },
+  aiAnalysisResult: {
+    rootCause: {
+      description: String,
+      confidence: Number
+    },
+    suggestedSolutions: [{
+      description: String,
+      steps: [String],
+      confidence: Number
+    }],
+    relatedIncidents: [String],
+    analysisTimestamp: Date
+  },
+  
+  // Status tracking
+  status: {
+    type: String,
+    enum: ['created', 'analyzing', 'incident_created', 'completed'],
+    default: 'created'
+  },
+  
+  // Timestamps
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+// Set updatedAt before update
+CorrelationSchema.pre('findOneAndUpdate', function() {
+  this.set({ updatedAt: new Date() });
+});
+
+const Correlation = mongoose.model('Correlation', CorrelationSchema);
+
+module.exports = Correlation;

@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   # Telemetry collection
@@ -51,8 +50,28 @@ services:
     networks:
       - observability-network
 
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.17.0
+    container_name: logstash
+    user: root  # Set user to root to avoid permission issues
+    volumes:
+      - ./docker/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./docker/logstash/pipeline:/usr/share/logstash/pipeline
+      - ./docker/logstash/data:/usr/share/logstash/data
+      - ./logs:/usr/share/logstash/logs
+    ports:
+      - "5000:5000"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    networks:
+      - observability-network
+    depends_on:
+      - elasticsearch
+
   fluentd:
-    image: fluent/fluentd:v1.14
+    build:
+      context: ./docker/config/fluentd
+      dockerfile: Dockerfile
     volumes:
       - ./docker/config/fluentd/conf:/fluentd/etc
     ports:
@@ -89,25 +108,66 @@ services:
       - observability-network
 
 
-  service-a:
-    build: 
-      context: ./services/service-a
-    environment:
-      - NODE_ENV=development
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_SERVICE_NAME=service-a
-      - FLUENTD_HOST=fluentd
-      - FLUENTD_PORT=24224
-      - CORRELATION_ENGINE_URL=http://correlation-engine:3001
-    ports:
-      - "8080:8080"
-    depends_on:
-      - otel-collector
-      - fluentd
-      - correlation-engine
-    networks:
-      - observability-network
+  # service-a:
+  #   build: 
+  #     context: ./services/service-a
+  #   environment:
+  #     - NODE_ENV=development
+  #     - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+  #     - OTEL_SERVICE_NAME=service-a
+  #     - FLUENTD_HOST=fluentd
+  #     - FLUENTD_PORT=24224
+  #     - CORRELATION_ENGINE_URL=http://correlation-engine:3001
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - otel-collector
+  #     - fluentd
+  #     - correlation-engine
+  #   networks:
+  #     - observability-network
 
+  auth-service:
+      build:
+        context: ./services/auth-service
+        dockerfile: Dockerfile
+      container_name: auth-service
+      environment:
+        - SPRING_APPLICATION_NAME=auth-service
+        - SERVER_PORT=18005
+        - SPRING_DATASOURCE_URL=jdbc:postgresql://37.27.65.240:15432/auth_db
+        - SPRING_DATASOURCE_USERNAME=postgres
+        - SPRING_DATASOURCE_PASSWORD=postgres
+        - KEYCLOAK_AUTH_SERVER_URL=https://api.screenera.ai/auth
+        - KEYCLOAK_REALMS_SUPER_ADMIN=super-admin-realm
+        - KEYCLOAK_REALMS_TENANT=tenant-realm
+        - KEYCLOAK_REALMS_CANDIDATE=candidate-realm
+        - OTEL_SERVICE_NAME=auth-service
+        - OTEL_RESOURCE_ATTRIBUTES=service.name=auth-service,service.version=1.0.0
+        - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+        - OTEL_METRICS_EXPORTER=otlp
+        - OTEL_LOGS_EXPORTER=otlp
+        - OTEL_TRACES_EXPORTER=otlp
+        - OTEL_JAVAAGENT_DEBUG=false
+        - OTEL_INSTRUMENTATION_JDBC_ENABLED=true
+        - LOGGING_CONFIG=classpath:logback-spring.xml
+        - FLUENTD_HOST=fluentd
+        - FLUENTD_PORT=24224
+      ports:  # Change expose to ports
+        - "18005:18005"  # Format is "HOST_PORT:CONTAINER_PORT" 
+      depends_on:
+      - otel-collector
+      - logstash
+      volumes:
+      - ./logs:/app/logs
+      networks:
+        - observability-network
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:18005/actuator/health"]
+        interval: 30s
+        timeout: 10s
+        retries: 3
+        start_period: 40s
 
   # Correlation Engine
   correlation-engine:
@@ -120,6 +180,8 @@ services:
       - MONGODB_URL=mongodb://mongo:27017/correlation-engine
       - AI_ANALYZER_URL=http://ai-analyzer:3002
       - LOG_LEVEL=debug
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - CHOKIDAR_USEPOLLING=true
     ports:
       - "3001:3001"
     depends_on:
