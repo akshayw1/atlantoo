@@ -23,10 +23,10 @@ jobs:
           node-version: '18'
           
       - name: Install dependencies
-        run: npm install axios @octokit/rest
+        run: npm install axios @octokit/rest@18.12.0
 
       - name: Process incident and create PR
-        run: node .github/scripts/fix.mjs
+        run: node .github/scripts/fix.js
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
           INCIDENT_ID: ${{ github.event.client_payload.incidentId || inputs.incidentId }}
