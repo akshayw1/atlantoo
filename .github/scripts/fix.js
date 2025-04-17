@@ -1,5 +1,5 @@
-const axios = require('axios');
-const { Octokit } = require('@octokit/rest');
+import { Octokit } from '@octokit/rest';
+import axios from 'axios';
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
