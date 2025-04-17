@@ -91,7 +91,7 @@ async function main() {
 
 async function getIncidentDetails(incidentId) {
   try {
-    const response = await axios.get(
+    const response = await axios.post(
       `http://88.99.104.97:3002/api/analyze/incidents/${incidentId}`
     );
     return response.data;
