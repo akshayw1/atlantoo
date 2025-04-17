@@ -1,5 +1,5 @@
 {
-  "name": "service-a",
+  "name": "auth-service",
   "version": "1.0.0",
   "description": "Sample service with observability",
   "main": "src/index.js",

@@ -22,11 +22,51 @@ async def analyze_correlation(correlation_id: str) -> Dict[str, Any]:
 
 async def analyze_incident(incident_id: str) -> Dict[str, Any]:
     """
-    Analyze an incident by getting its correlations and analyzing them
+    Generate solutions for an incident based on analysis
     """
-    # This would get correlations for the incident and analyze them
-    # For the prototype, we'll just return a placeholder
-    return {
-        "message": "Incident analysis not implemented yet",
-        "incident_id": incident_id
-    }
+    # incident_id = request_data.get("incidentId")
+    
+    # if not incident_id:
+    #     raise HTTPException(status_code=400, detail="Missing required field: incidentId")
+    
+    logger.info(f"Analyzing incident: {incident_id}")
+    
+    result = await analyzer_service.analyze_incident(incident_id)
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    logger.info(f"Incident analysis result: {result}")
+    
+    return result
+
+async def analyze_solutions(request_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Generate solutions for an incident based on analysis
+    """
+    incident_id = request_data.get("incidentId")
+    correlation_id = request_data.get("correlationId")
+    
+    if not incident_id:
+        raise HTTPException(status_code=400, detail="Missing required field: incidentId")
+    
+    logger.info(f"Generating solutions for incident: {incident_id}, correlation: {correlation_id}")
+    
+    result = await analyzer_service.generate_incident_solutions(incident_id, correlation_id)
+    
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    return result
+
+async def detect_anomaly(request_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Detect anomalies in provided telemetry data
+    """
+    logger.info(f"Detecting anomalies for service: {request_data.get('serviceName')}")
+    
+    result = await analyzer_service.detect_anomaly(request_data)
+    
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    return result

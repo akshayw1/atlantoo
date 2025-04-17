@@ -13,7 +13,7 @@ console.log('Initializing OpenTelemetry instrumentation with explicit metric exp
 // Configure the SDK to export telemetry data to the collector
 const sdk = new NodeSDK({
   resource: new Resource({
-    [SemanticResourceAttributes.SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || 'service-a',
+    [SemanticResourceAttributes.SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || 'auth-service',
     [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
   }),
   traceExporter: new OTLPTraceExporter({

@@ -105,6 +105,45 @@ class GeminiClient:
                 "error": str(e),
                 "solutions": []
             }
+
+
+    async def detect_anomaly(self, prompt: str) -> Dict[str, Any]:
+        """
+        Detect anomalies in telemetry data using Gemini API
+        """
+        if self.mock_mode:
+            return self._get_mock_anomaly_response()
+        
+        try:
+            url = f"{self.base_url}/gemini-1.5-flash:generateContent?key={self.api_key}"
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {
+                                "text": prompt
+                            }
+                        ]
+                    }
+                ]
+            }
+            headers = {
+                "Content-Type": "application/json"
+            }
+            response = requests.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            response_data = response.json()
+            text = response_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+            return self._parse_response(text)
+            
+        except Exception as e:
+            logger.error(f"Error calling Gemini API for anomaly detection: {str(e)}")
+            return {
+                "error": str(e),
+                "anomalies": [],
+                "summary": {}
+            }
+    
     
     def _parse_response(self, text: str) -> Dict[str, Any]:
         """
@@ -154,7 +193,7 @@ class GeminiClient:
                     ]
                 }
             ],
-            "affectedServices": ["service-a", "database"],
+            "affectedServices": ["auth-service", "database"],
             "priority": "high",
             "confidence": 0.85
         }

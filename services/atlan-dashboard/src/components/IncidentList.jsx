@@ -66,7 +66,7 @@ const IncidentList = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   
   // Available services (in a real app, fetch this from the backend)
-  const [availableServices] = useState(['service-a', 'correlation-engine', 'ai-analyzer']);
+  const [availableServices] = useState(['auth-service', 'correlation-engine', 'ai-analyzer']);
   
   const fetchIncidents = async () => {
     try {

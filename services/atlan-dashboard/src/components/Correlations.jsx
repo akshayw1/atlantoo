@@ -47,7 +47,7 @@ const Correlations = () => {
   const [openTriggerDialog, setOpenTriggerDialog] = useState(false);
   const [loadingAnalyze, setLoadingAnalyze] = useState(false);
   const [correlationFormData, setCorrelationFormData] = useState({
-    serviceName: 'service-a',
+    serviceName: 'auth-service',
     startTime: new Date(Date.now() - 10 * 60 * 1000), // 10 minutes ago
     endTime: new Date(),
   });
@@ -396,7 +396,7 @@ const Correlations = () => {
                 label="Service"
                 onChange={(e) => handleInputChange('serviceName', e.target.value)}
               >
-                <MenuItem value="service-a">Service A</MenuItem>
+                <MenuItem value="auth-service">Service A</MenuItem>
                 <MenuItem value="service-b">Service B</MenuItem>
                 <MenuItem value="service-c">Service C</MenuItem>
               </Select>

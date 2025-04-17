@@ -61,7 +61,7 @@ class MetricsClient {
    * Get HTTP request rate by service
    */
   async getRequestRateByService(service, timeRange, step = '15s') {
-    const query = `sum(rate(http_server_requests_seconds_count{job="${service}"}[5m])) by (uri, method, status)`;
+    const query = `sum(rate(http_server_requests_seconds_count{job="${service}"}[30m])) by (uri, method, status)`;
     return this.queryRange(query, timeRange, step);
   }
   
@@ -69,7 +69,7 @@ class MetricsClient {
    * Get HTTP error rate by service
    */
   async getErrorRateByService(service, timeRange, step = '15s') {
-    const query = `sum(rate(http_server_requests_seconds_count{job="${service}", status=~"5..|4.."}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{job="${service}"}[5m])) by (uri) * 100`;
+    const query = `sum(rate(http_server_requests_seconds_count{job="${service}", status=~"5..|4.."}[30m])) by (uri) / sum(rate(http_server_requests_seconds_count{job="${service}"}[5m])) by (uri) * 100`;
     return this.queryRange(query, timeRange, step);
   }
   
@@ -77,7 +77,7 @@ class MetricsClient {
    * Get HTTP latency by service
    */
   async getLatencyByService(service, timeRange, step = '15s') {
-    const query = `histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job="${service}"}[5m])) by (uri, le))`;
+    const query = `histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job="${service}"}[30m])) by (uri, le))`;
     return this.queryRange(query, timeRange, step);
   }
   

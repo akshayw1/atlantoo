@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const { Schema } = mongoose;
+
 
 const AnomalySchema = new mongoose.Schema({
   type: {
@@ -47,15 +49,18 @@ const CorrelationSchema = new mongoose.Schema({
   
   // Summary of telemetry analyzed
   telemetrySummary: {
-    traceCount: {
-      type: Number,
-      default: 0
+    trace: {
+      type: [Schema.Types.Mixed], // array of any kind of object
+      default: []
     },
-    logCount: {
-      type: Number,
-      default: 0
+    log: {
+      type: [Schema.Types.Mixed],
+      default: []
     },
-    metricTypes: [String]
+    metric: {
+      type: [Schema.Types.Mixed],
+      default: []
+    }
   },
   
   // Detected anomalies

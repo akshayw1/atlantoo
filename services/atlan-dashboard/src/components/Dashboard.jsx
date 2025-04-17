@@ -69,7 +69,7 @@ const Dashboard = () => {
         
         // Get metrics for a service (using the first service from the list for demo)
         if (serviceList.length > 0) {
-          const serviceName = 'service-a'; // Default to service-a for now
+          const serviceName = 'auth-service'; // Default to auth-service for now
           const now = new Date();
           const timeRange = {
             start: new Date(now.getTime() - 24 * 60 * 60 * 1000), // 24 hours ago

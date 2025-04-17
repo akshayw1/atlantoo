@@ -68,18 +68,18 @@ services:
     depends_on:
       - elasticsearch
 
-  fluentd:
-    build:
-      context: ./docker/config/fluentd
-      dockerfile: Dockerfile
-    volumes:
-      - ./docker/config/fluentd/conf:/fluentd/etc
-    ports:
-      - "24224:24224"
-    depends_on:
-      - elasticsearch
-    networks:
-      - observability-network
+  # fluentd:
+  #   build:
+  #     context: ./docker/config/fluentd
+  #     dockerfile: Dockerfile
+  #   volumes:
+  #     - ./docker/config/fluentd/conf:/fluentd/etc
+  #   ports:
+  #     - "24224:24224"
+  #   depends_on:
+  #     - elasticsearch
+  #   networks:
+  #     - observability-network
   # Traces
   jaeger:
     image: jaegertracing/all-in-one:latest
@@ -108,13 +108,13 @@ services:
       - observability-network
 
 
-  # service-a:
+  # auth-service:
   #   build: 
-  #     context: ./services/service-a
+  #     context: ./services/auth-service
   #   environment:
   #     - NODE_ENV=development
   #     - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-  #     - OTEL_SERVICE_NAME=service-a
+  #     - OTEL_SERVICE_NAME=auth-service
   #     - FLUENTD_HOST=fluentd
   #     - FLUENTD_PORT=24224
   #     - CORRELATION_ENGINE_URL=http://correlation-engine:3001
@@ -201,6 +201,18 @@ services:
     networks:
       - observability-network
 
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"  # UI will be available on http://localhost:8081
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+    depends_on:
+      - mongo
+    networks:
+      - observability-network
+
   ai-analyzer:
     build:
       context: ./services/ai-analyzer
@@ -213,8 +225,8 @@ services:
       - CORRELATION_ENGINE_URL=http://correlation-engine:3001
       - SMTP_SERVER=smtp.gmail.com
       - SMTP_PORT=587
-      - SMTP_USERNAME=paulsanjaym@gmail.com
-      - SMTP_PASSWORD=idaw fzae qpiw ljod
+      - SMTP_USERNAME=akshayywaghmaree@gmail.com
+      - SMTP_PASSWORD=sfnt ffqr pcdc oras
       - NOTIFICATION_FROM=paulsanjaym@gmail.com
       - NOTIFICATION_RECIPIENTS=akshaywaghmarecc@gmail.com
       - DASHBOARD_URL=${DASHBOARD_URL:-http://localhost:3000}

@@ -17,7 +17,7 @@ class Settings:
     mongodb_url: str = os.getenv("MONGODB_URL", "mongodb://mongo:27017/ai-analyzer")
     
     # Correlation Engine
-    correlation_engine_url: str = os.getenv("CORRELATION_ENGINE_URL", "http://correlation-engine:3001")
+    correlation_engine_url: str = os.getenv("CORRELATION_ENGINE_URL", "http://88.99.104.97:3001")
 
         # SMTP Settings for Email Notifications
     smtp_server: str = os.getenv("SMTP_SERVER", "")

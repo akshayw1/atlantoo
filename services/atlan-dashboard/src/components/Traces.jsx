@@ -176,7 +176,7 @@ const Traces = () => {
   const [filteredTraces, setFilteredTraces] = useState([]);
   
   // Form states
-  const [service, setService] = useState('service-a');
+  const [service, setService] = useState('auth-service');
   const [searchTerm, setSearchTerm] = useState('');
   const [timeRange, setTimeRange] = useState({
     start: new Date(Date.now() - 3600000), // 1 hour ago
@@ -202,7 +202,7 @@ const Traces = () => {
   const [filterErrorsOnly, setFilterErrorsOnly] = useState(false);
   
   // Available services
-  const [availableServices] = useState(['service-a', 'correlation-engine', 'ai-analyzer']);
+  const [availableServices] = useState(['auth-service', 'correlation-engine', 'ai-analyzer']);
   
   const fetchTraces = async () => {
     try {

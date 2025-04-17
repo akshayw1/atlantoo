@@ -119,7 +119,7 @@ const Analysis = () => {
         _id: 'analysis1',
         correlationId: 'correlation1',
         incidentId: 'incident1',
-        serviceName: 'service-a',
+        serviceName: 'auth-service',
         analysisType: 'root-cause',
         createdAt: new Date().toISOString(),
         rootCauses: [
@@ -142,7 +142,7 @@ const Analysis = () => {
             ]
           }
         ],
-        affectedServices: ['service-a', 'database'],
+        affectedServices: ['auth-service', 'database'],
         priority: 'high',
         confidence: 0.85,
         solutions: [

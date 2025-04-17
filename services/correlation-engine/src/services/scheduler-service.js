@@ -2,34 +2,63 @@ const cron = require('node-cron');
 const correlationService = require('./correlation-service');
 const metricsClient = require('./telemetry/metrics-client');
 const logger = require('pino')();
-
+``
 class SchedulerService {
   constructor() {
     this.jobs = [];
     this.runningCheck = false;
-    this.activeServices = new Set(['auth-service']);  // Default monitored service
-    this.anomalyCheckInterval = process.env.ANOMALY_CHECK_INTERVAL || '*/1 * * * *';  // Every minute by default
-    this.healthCheckInterval = process.env.HEALTH_CHECK_INTERVAL || '0 */6 * * *';    // Every 6 hours by default
+    this.isRunning = false; // Boolean flag to control scheduler state
+    this.activeServices = new Set(['auth-service']); // Default monitored service
+    this.anomalyCheckInterval = process.env.ANOMALY_CHECK_INTERVAL || '*/30 * * * *'; // Every minute by default
+    this.healthCheckInterval = process.env.HEALTH_CHECK_INTERVAL || '0 */6 * * *'; // Every 6 hours by default
     
     logger.info('Scheduler service initialized');
   }
   
   // Start scheduling jobs
   start() {
-    // Run anomaly detection check regularly
-    this.jobs.push(cron.schedule(this.anomalyCheckInterval, () => this.runAnomalyCheck()));
+    if (this.isRunning) {
+      logger.info('Scheduler is already running');
+      return;
+    }
+
+    // Set running state to true
+    this.isRunning = true;
+
+    // Schedule jobs but only execute if isRunning is true
+    this.jobs.push(cron.schedule(this.anomalyCheckInterval, () => {
+      if (this.isRunning) {
+        this.runAnomalyCheck();
+      } else {
+        logger.debug('Anomaly check skipped: Scheduler is stopped');
+      }
+    }));
     
-    // Run daily health check correlations
-    this.jobs.push(cron.schedule(this.healthCheckInterval, () => this.runHealthCheck()));
+    this.jobs.push(cron.schedule(this.healthCheckInterval, () => {
+      if (this.isRunning) {
+        this.runHealthCheck();
+      } else {
+        logger.debug('Health check skipped: Scheduler is stopped');
+      }
+    }));
     
     logger.info(`Scheduler started. Anomaly checks every ${this.anomalyCheckInterval}, health checks every ${this.healthCheckInterval}`);
   }
 
-  // Stop all scheduled jobs
+  // Stop scheduler by setting isRunning to false
   stop() {
-    this.jobs.forEach(job => job.stop());
-    this.jobs = [];
+    if (!this.isRunning) {
+      logger.info('Scheduler is already stopped');
+      return;
+    }
+
+    this.isRunning = false;
     logger.info('Scheduler stopped');
+  }
+
+  // Check if scheduler is running
+  isSchedulerRunning() {
+    return this.isRunning;
   }
 
   // Main anomaly detection check that runs per schedule

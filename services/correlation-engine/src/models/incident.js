@@ -1,19 +1,7 @@
 const mongoose = require('mongoose');
 
 const AnomalySchema = new mongoose.Schema({
-  type: {
-    type: String,
-    required: true,
-    enum: [
-      'error_rate_threshold',
-      'latency_threshold',
-      'cpu_threshold',
-      'memory_threshold',
-      'span_error',
-      'span_latency',
-      'ai_detected'
-    ]
-  },
+  type: String,
   timestamp: {
     type: Date,
     required: true
@@ -97,6 +85,10 @@ const IncidentSchema = new mongoose.Schema({
     enum: ['anomaly_detection', 'manual', 'correlation'],
     default: 'anomaly_detection'
   },
+  aiEnhancedTitle: String,
+  aiDescription: String,
+  rootCauseHypothesis: String,
+  recommendedNextSteps: [String],
   anomalies: [AnomalySchema],
   hasSolutions: {
     type: Boolean,

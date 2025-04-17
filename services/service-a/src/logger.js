@@ -8,7 +8,7 @@ const fluentPort = parseInt(process.env.FLUENTD_PORT || '24224');
 const correlationEngineUrl = process.env.CORRELATION_ENGINE_URL || 'http://correlation-engine:3001';
 
 // Create Fluentd logger
-const fluentLogger = fluent.createFluentSender('service-a', {
+const fluentLogger = fluent.createFluentSender('auth-service', {
   host: fluentHost,
   port: fluentPort,
   timeout: 3.0,
@@ -23,7 +23,7 @@ const logger = winston.createLogger({
     winston.format.timestamp(),
     winston.format.json()
   ),
-  defaultMeta: { service: process.env.OTEL_SERVICE_NAME || 'service-a' },
+  defaultMeta: { service: process.env.OTEL_SERVICE_NAME || 'auth-service' },
   transports: [
     // Console transport for local development
     new winston.transports.Console()
@@ -53,7 +53,7 @@ logger.info = (message, meta = {}) => {
   axios.post(`${correlationEngineUrl}/api/logs`, {
     level: 'info',
     message,
-    service: process.env.OTEL_SERVICE_NAME || 'service-a',
+    service: process.env.OTEL_SERVICE_NAME || 'auth-service',
     ...meta,
     timestamp: new Date().toISOString()
   }).catch(err => {
@@ -75,7 +75,7 @@ logger.warn = (message, meta = {}) => {
   axios.post(`${correlationEngineUrl}/api/logs`, {
     level: 'warn',
     message,
-    service: process.env.OTEL_SERVICE_NAME || 'service-a',
+    service: process.env.OTEL_SERVICE_NAME || 'auth-service',
     ...meta,
     timestamp: new Date().toISOString()
   }).catch(err => {
@@ -97,7 +97,7 @@ logger.error = (message, meta = {}) => {
   axios.post(`${correlationEngineUrl}/api/logs`, {
     level: 'error',
     message,
-    service: process.env.OTEL_SERVICE_NAME || 'service-a',
+    service: process.env.OTEL_SERVICE_NAME || 'auth-service',
     ...meta,
     timestamp: new Date().toISOString()
   }).catch(err => {
@@ -119,7 +119,7 @@ logger.debug = (message, meta = {}) => {
   axios.post(`${correlationEngineUrl}/api/logs`, {
     level: 'debug',
     message,
-    service: process.env.OTEL_SERVICE_NAME || 'service-a',
+    service: process.env.OTEL_SERVICE_NAME || 'auth-service',
     ...meta,
     timestamp: new Date().toISOString()
   }).catch(err => {

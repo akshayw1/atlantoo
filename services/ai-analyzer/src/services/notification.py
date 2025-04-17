@@ -66,119 +66,96 @@ class NotificationService:
             return False
     
     def _build_subject(self, analysis_result: Dict[str, Any]) -> str:
-        """
-        Build the email subject based on analysis result
-        """
-        service_name = analysis_result.get("serviceName", "Unknown service")
+        service_name = analysis_result.get("serviceName", "auth-service")
         priority = analysis_result.get("priority", "medium").upper()
-        root_causes = analysis_result.get("rootCauses", [])
-        
-        if not root_causes:
-            return f"[{priority}] All systems normal for {service_name}"
-            
-        primary_cause = root_causes[0].get("cause", "Issue detected")
-        return f"[{priority}] {service_name}: {primary_cause}"
+        title = analysis_result.get("title", "Issue detected")
+        return f"[{priority}] {service_name}: {title}"
+
     
     def _build_email_body(self, analysis_result: Dict[str, Any]) -> str:
-        """
-        Build the HTML email body with analysis details
-        """
-        service_name = analysis_result.get("serviceName", "Unknown service")
-        root_causes = analysis_result.get("rootCauses", [])
+        service_name = analysis_result.get("serviceName", "auth-service")
+        title = analysis_result.get("title", "No title provided")
+        description = analysis_result.get("description", "No description provided")
+        root_cause = analysis_result.get("rootCauseHypothesis", "N/A")
+        priority = analysis_result.get("priority", "medium")
+        severity = analysis_result.get("severity", "low")
+        recommended_steps = analysis_result.get("recommendedNextSteps", [])
         solutions = analysis_result.get("solutions", [])
-        correlation_id = analysis_result.get("correlationId", "unknown")
-        
-        # Start building HTML
+        incident_id = analysis_result.get("incidentId", "unknown")
+        dashboard_url = settings.dashboard_url or "http://localhost:3000"
+
         html = f"""
         <html>
         <head>
             <style>
-                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-                .container {{ max-width: 800px; margin: 0 auto; padding: 20px; }}
-                .header {{ background-color: #f4f4f4; padding: 10px; border-radius: 5px; }}
-                .section {{ margin: 20px 0; }}
-                .cause {{ background-color: #fff8e1; padding: 10px; margin: 10px 0; border-left: 4px solid #ffc107; }}
-                .solution {{ background-color: #e8f5e9; padding: 10px; margin: 10px 0; border-left: 4px solid #4caf50; }}
+                body {{ font-family: Arial, sans-serif; }}
+                .container {{ max-width: 800px; margin: auto; padding: 20px; }}
+                .header {{ background: #f4f4f4; padding: 10px; border-radius: 5px; }}
+                .section {{ margin-top: 20px; }}
+                .highlight {{ background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; }}
+                .solution {{ background: #e8f5e9; padding: 10px; margin-top: 10px; border-left: 4px solid #4caf50; }}
                 .high {{ color: #d32f2f; }}
                 .medium {{ color: #f57c00; }}
                 .low {{ color: #388e3c; }}
-                ul {{ padding-left: 20px; }}
             </style>
         </head>
         <body>
             <div class="container">
                 <div class="header">
-                    <h2>Observability Alert: {service_name}</h2>
-                    <p>Priority: <span class="{analysis_result.get('priority', 'medium')}">{analysis_result.get('priority', 'medium').upper()}</span></p>
+                    <h2>Incident Analysis for {service_name}</h2>
+                    <p><strong>Priority:</strong> <span class="{priority}">{priority.upper()}</span></p>
+                    <p><strong>Severity:</strong> <span class="{severity}">{severity.capitalize()}</span></p>
                 </div>
-        """
-        
-        # Root causes section
-        html += """
+
                 <div class="section">
-                    <h3>Diagnosis Results</h3>
-        """
-        
-        if not root_causes:
-            html += "<p>No issues detected. System appears to be functioning normally.</p>"
-        else:
-            for cause in root_causes:
-                confidence = int(cause.get("confidence", 0) * 100)
-                evidence_list = "".join([f"<li>{e}</li>" for e in cause.get("evidence", [])])
-                
-                html += f"""
-                    <div class="cause">
-                        <h4>{cause.get('cause', 'Unknown issue')}</h4>
-                        <p>Confidence: {confidence}%</p>
-                        <p>Evidence:</p>
-                        <ul>
-                            {evidence_list}
-                        </ul>
-                    </div>
-                """
-        
-        html += "</div>"
-        
-        # Solutions section
-        if solutions:
-            html += """
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                </div>
+
+                <div class="section highlight">
+                    <h4>Root Cause Hypothesis</h4>
+                    <p>{root_cause}</p>
+                </div>
+
                 <div class="section">
-                    <h3>Recommended Actions</h3>
-            """
-            
-            for solution in solutions:
-                confidence = int(solution.get("confidence", 0) * 100)
-                steps_list = "".join([f"<li>{s}</li>" for s in solution.get("steps", [])])
-                
-                html += f"""
-                    <div class="solution">
-                        <h4>{solution.get('title', 'Unnamed solution')}</h4>
-                        <p>{solution.get('description', '')}</p>
-                        <p>Confidence: {confidence}% | Impact: {solution.get('impact', 'unknown')} | Category: {solution.get('category', 'unknown')}</p>
-                        <p>Implementation Steps:</p>
-                        <ol>
-                            {steps_list}
-                        </ol>
-                    </div>
-                """
-            
-            html += "</div>"
-        
-        # Links section
-        dashboard_url = settings.dashboard_url or "http://localhost:3000"
-        html += f"""
-                <div class="section">
-                    <h3>Links</h3>
+                    <h4>Recommended Next Steps</h4>
                     <ul>
-                        <li><a href="{dashboard_url}/incidents">View All Incidents</a></li>
-                        <li><a href="{dashboard_url}/correlations/{correlation_id}">View This Correlation</a></li>
+                        {''.join(f"<li>{step}</li>" for step in recommended_steps)}
                     </ul>
                 </div>
+        """
+
+        if solutions:
+            html += """
+            <div class="section">
+                <h4>Proposed Solutions</h4>
+            """
+            for solution in solutions:
+                steps_html = ''.join(f"<li>{step}</li>" for step in solution.get("steps", []))
+                html += f"""
+                    <div class="solution">
+                        <p><strong>{solution.get('description')}</strong></p>
+                        <p><strong>Confidence:</strong> {int(solution.get('confidence', 0) * 100)}%</p>
+                        <p><strong>Source:</strong> {solution.get('source')}</p>
+                        <p><strong>Status:</strong> {solution.get('implementationStatus')}</p>
+                        <ul>{steps_html}</ul>
+                    </div>
+                """
+            html += "</div>"
+
+        html += f"""
+            <div class="section">
+                <h4>Links</h4>
+                <ul>
+                    <li><a href="{dashboard_url}/incidents">All Incidents</a></li>
+                    <li><a href="{dashboard_url}/incidents/{incident_id}">This Incident</a></li>
+                </ul>
             </div>
+        </div>
         </body>
         </html>
         """
-        
+
         return html
 
 notification_service = NotificationService()

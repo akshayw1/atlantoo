@@ -73,7 +73,7 @@ const CorrelationList = () => {
   const [creatingCorrelation, setCreatingCorrelation] = useState(false);
   
   // Available services
-  const [availableServices] = useState(['service-a', 'correlation-engine', 'ai-analyzer']);
+  const [availableServices] = useState(['auth-service', 'correlation-engine', 'ai-analyzer']);
   
   const fetchCorrelations = async () => {
     try {

@@ -52,7 +52,7 @@ const Logs = () => {
   const [filteredLogs, setFilteredLogs] = useState([]);
   
   // Form states
-  const [service, setService] = useState('service-a');
+  const [service, setService] = useState('auth-service');
   const [searchTerm, setSearchTerm] = useState('');
   const [logLevel, setLogLevel] = useState('all');
   const [timeRange, setTimeRange] = useState({
@@ -74,7 +74,7 @@ const Logs = () => {
   const [filterTraceId, setFilterTraceId] = useState('');
   
   // Available services
-  const [availableServices] = useState(['service-a', 'correlation-engine', 'ai-analyzer']);
+  const [availableServices] = useState(['auth-service', 'correlation-engine', 'ai-analyzer']);
   
   // Log levels with colors
   const logLevels = {
