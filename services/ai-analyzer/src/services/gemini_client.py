@@ -105,6 +105,62 @@ class GeminiClient:
                 "error": str(e),
                 "solutions": []
             }
+            
+    async def generate_code_fix(self, prompt: str) -> Dict[str, Any]:
+            """
+            Generate fixed code based on error analysis using Gemini API
+            
+            Args:
+                prompt: Prompt containing file content and error details
+                
+            Returns:
+                Dictionary with fixed code and confidence
+            """
+            if self.mock_mode:
+                return self._get_mock_code_fix()
+            
+            try:
+                url = f"{self.base_url}/gemini-1.5-flash:generateContent?key={self.api_key}"
+                
+                payload = {
+                    "contents": [
+                        {
+                            "parts": [
+                                {
+                                    "text": prompt
+                                }
+                            ]
+                        }
+                    ],
+                    "generationConfig": {
+                        "temperature": 0.2,  # Lower temperature for more deterministic output
+                        "topP": 0.8,
+                        "topK": 40,
+                        "maxOutputTokens": 8192  # Allow for longer responses for complete code files
+                    }
+                }
+                
+                headers = {
+                    "Content-Type": "application/json"
+                }
+                
+                response = requests.post(url, headers=headers, json=payload)
+                response.raise_for_status()
+                
+                response_data = response.json()
+                text = response_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                
+                # Parse response text as JSON
+                return self._parse_response(text)
+                
+            except Exception as e:
+                logger.error(f"Error calling Gemini API for code fixing: {str(e)}")
+                return {
+                    "error": str(e),
+                    "fixedCode": None,
+                    "confidence": 0.0
+                }
+
 
 
     async def detect_anomaly(self, prompt: str) -> Dict[str, Any]:

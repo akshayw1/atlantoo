@@ -1,0 +1,32 @@
+name: Fix Incident
+
+on:
+  repository_dispatch:
+    types: [new_incident]
+  workflow_dispatch:
+    inputs:
+      incidentId:
+        description: 'Incident ID to process'
+        required: true
+        type: string
+
+jobs:
+  create-fix-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout action repo
+        uses: actions/checkout@v3
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm install axios @octokit/rest
+
+      - name: Process incident and create PR
+        run: node .github/scripts/fix-incident.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
+          INCIDENT_ID: ${{ github.event.client_payload.incidentId || inputs.incidentId }}
