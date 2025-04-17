@@ -692,8 +692,7 @@ class CorrelationService {
       logger.info(`Requesting AI solution analysis for incident ${incidentId}`);
 
       const response = await axios.post(
-        `${this.aiAnalyzerUrl}/api/analyze/incidents/${incidentId}`,
-        { timeout: 15000 }
+        `${this.aiAnalyzerUrl}/api/analyze/incidents/${incidentId}`
       );
 
       if (response.data && response.data.solutions) {
@@ -702,7 +701,9 @@ class CorrelationService {
           incidentId,
           response.data.solutions,
           response.data.enhancedRootCause
-        );
+        );  
+
+        console.log('AI solutions:', response.data.solutions);
 
         logger.info(`Updated incident ${incidentId} with ${response.data.solutions.length} solutions`);
       } else {

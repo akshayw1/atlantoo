@@ -443,6 +443,15 @@ class PromptBuilder:
         "confidence": number,
         "enhancedRootCause": "string",
         "relatedIncidents": ["string"],
+        "errorLocation": {
+            "service": "string",
+            "file": "string",
+            "className": "string",
+            "methodName": "string",
+            "lineNumber": 0,
+            "exceptionType": "string",
+            "exceptionMessage": "string"
+          },
         "solutions": [
           {
             "description": "string",
@@ -534,5 +543,77 @@ Format your response as JSON with the following structure:
   ]
 }}"""
 
+
+
+def build_code_fix_prompt(self, file_content: str, incident: Dict[str, Any]) -> str:
+    """
+    Build a prompt for code fixing based on file content and incident details.
+    
+    Args:
+        file_content: The content of the file to be fixed
+        incident: The incident details containing error information
+        
+    Returns:
+        A well-structured prompt for the AI model
+    """
+    error_location = incident.get("errorLocation", {})
+    
+    prompt = f"""# Code Fix Request
+
+## File Content
+```
+{file_content}
+```
+
+## Error Information
+- **Service**: {incident.get("serviceName")}
+- **File**: {error_location.get("file")}
+- **Class**: {error_location.get("className")}
+- **Method**: {error_location.get("methodName")}
+- **Line Number**: {error_location.get("lineNumber")}
+- **Exception Type**: {error_location.get("exceptionType")}
+- **Exception Message**: {error_location.get("exceptionMessage")}
+
+## Incident Details
+- **Title**: {incident.get("title")}
+- **Description**: {incident.get("description")}
+- **Root Cause Hypothesis**: {incident.get("rootCauseHypothesis")}
+
+## Suggested Solutions
+"""
+
+    # Add any solutions if available
+    solutions = incident.get("solutions", [])
+    if solutions:
+        for i, solution in enumerate(solutions, 1):
+            prompt += f"""
+### Solution {i}: {solution.get('description', '')}
+{solution.get('steps', [])}
+"""
+
+    # Add instructions for the response format
+    prompt += """
+## Task
+1. Analyze the file content and the error information
+2. Identify the exact location of the problem
+3. Fix the code to address the error while maintaining the original functionality
+4. Return ONLY the complete fixed file content, maintaining all imports, formatting, and non-problematic code
+
+## Response Format
+Your response should be a JSON object with the following structure:
+```json
+{
+  "fixedCode": "// The complete fixed file content",
+  "confidence": 0.95,
+  "explanations": "Brief explanation of the changes made"
+}
+```
+
+IMPORTANT: Make only the minimal changes necessary to fix the specific error. Do not refactor or optimize other parts of the code unless directly related to fixing the error.
+"""
+
+    return prompt
+  
+  
 
 prompt_builder = PromptBuilder()

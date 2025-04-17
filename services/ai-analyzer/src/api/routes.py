@@ -44,3 +44,39 @@ async def detect_anomaly_route(
     Detect anomalies in telemetry data
     """
     return await detect_anomaly(request_data)
+
+@router.post("/fix-code")
+async def fix_code_route(
+    request_data: Dict[str, Any] = Body(..., description="File content and incident details for code fixing")
+) -> Dict[str, Any]:
+    """
+    Generate a fixed version of code based on incident information
+    """
+    try:
+        file_content = request_data.get("file")
+        incident = request_data.get("incident")
+        
+        if not file_content:
+            raise HTTPException(status_code=400, detail="Missing required field: file")
+        
+        if not incident:
+            raise HTTPException(status_code=400, detail="Missing required field: incident")
+        
+        logger.info(f"Generating fix for file in service: {incident.get('serviceName')}")
+        
+        # Build the prompt for the AI
+        prompt = prompt_builder.build_code_fix_prompt(file_content, incident)
+        
+        # Get the fix from the AI
+        result = await gemini_client.generate_code_fix(prompt)
+        
+        # Return the fixed code
+        return {
+            "fixedCode": result.get("fixedCode"),
+            "confidence": result.get("confidence", 0.0),
+            "explanations": result.get("explanations", "")
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating code fix: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
