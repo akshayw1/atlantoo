@@ -1,9 +1,14 @@
 # src/api/routes.py
 from fastapi import APIRouter, HTTPException, Path, Body
 from typing import Dict, Any
+import logging
+from services.analyzer import analyzer_service
+from services.gemini_client import gemini_client
+from services.prompt_builder import prompt_builder
+
 
 from api.controllers import analyze_correlation, analyze_incident, detect_anomaly,analyze_solutions
-
+logger = logging.getLogger("ai-analyzer.routes")
 router = APIRouter()
 
 @router.post("/analyze/correlation/{correlation_id}")

@@ -69,7 +69,7 @@ async function main() {
     execSync(`git push origin ${branchName}`);
     
     // Create PR
-    const prTitle = `Fix ${errorLocation.exceptionType} in ${className}.${methodName}`;
+    const prTitle = `Fix ${errorLocation.exceptionType} in ${methodName}`;
     const prBody = createPRDescription(incident);
     
     const pr = await octokit.pulls.create({
