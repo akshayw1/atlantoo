@@ -79,7 +79,7 @@ async function main() {
     });
     
     console.log(`Successfully created PR: ${pr.data.html_url}`);
-    sendPRInfo(pr.data, incidentId);
+    await sendPRInfo(pr.data, incidentId);
     console.log('PR info sent to server');
     
   } catch (error) {
@@ -97,10 +97,6 @@ async function sendPRInfo(prData, incidentId) {
       prData,
       incidentId,
     });
-    // const response = await axios.post(apiUrl, {
-    //   prData,
-    //   incidentId,
-    // });
 
     console.log('Response:', response.data);
     return response.data;
