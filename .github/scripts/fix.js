@@ -36,8 +36,8 @@ async function main() {
     console.log(`Cloning repository: ${repoOrg}/${repoName}`);
     execSync(`git clone https://x-access-token:${process.env.GITHUB_TOKEN}@github.com/${repoOrg}/${repoName}.git`);
     
-    // Create a new branch
-    const branchName = `fix-${incidentId.substring(0, 10)}`;
+    const randomString = Date.now().toString(36).substring(5, 13); // Generates a random string based on timestamp
+    const branchName = `fix-${incidentId.substring(0, 10)}-${randomString}`;
     process.chdir(repoName);
     execSync(`git checkout -b ${branchName}`);
     
