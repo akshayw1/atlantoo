@@ -7,7 +7,7 @@ from services.gemini_client import gemini_client
 from services.prompt_builder import prompt_builder
 
 
-from api.controllers import analyze_correlation, analyze_incident, detect_anomaly,analyze_solutions
+from api.controllers import analyze_correlation, analyze_incident, detect_anomaly,analyze_solutions,trigger_auto_fix
 logger = logging.getLogger("ai-analyzer.routes")
 router = APIRouter()
 
@@ -31,6 +31,18 @@ async def analyze_incident_route(
     print(f"Analyzing incident: {incident_id}")
     
     return await analyze_incident(incident_id)
+
+@router.post("/trigger/solution/{incident_id}")
+async def analyze_incident_route(
+    incident_id: str = Path(..., description="The ID of the incident to analyze")
+) -> Dict[str, Any]:
+    """
+    Trigger a solution for an incident by ID
+    """
+    
+    print(f"Trigger solution for  incident: {incident_id}")
+    
+    return await trigger_auto_fix(incident_id)
 
 @router.post("/analyze/solutions")
 async def analyze_solutions_route(

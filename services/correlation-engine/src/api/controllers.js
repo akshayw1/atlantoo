@@ -41,6 +41,33 @@ exports.correlateByTraceId = async (req, res) => {
   }
 };
 
+exports.getPRinfo = async (req, res) => {
+  try {
+    const { prData, incidentId } = req.body;
+
+    // Validate presence
+    if (!prData || !incidentId) {
+      return res.status(400).json({ error: 'Missing prData or incidentId' });
+    }
+
+    // Validate incident exists
+    const incident = await Incident.findById(incidentId);
+    if (!incident) {
+      return res.status(404).json({ error: 'Incident not found' });
+    }
+
+    // Store PR info
+    incident.pullRequestInfo = prData;
+    await incident.save();
+
+    res.status(200).json({ message: 'PR info saved successfully', prInfo: prData });
+  } catch (error) {
+    logger.error(`Error in getPRinfo: ${error.message}`);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
 exports.getCorrelation = async (req, res) => {
   try {
     const { correlationId } = req.params;

@@ -79,12 +79,38 @@ async function main() {
     });
     
     console.log(`Successfully created PR: ${pr.data.html_url}`);
+    sendPRInfo(pr.data, incidentId);
+    console.log('PR info sent to server');
     
   } catch (error) {
     console.error(`Error processing incident: ${error.message}`);
     process.exit(1);
   }
 }
+
+
+async function sendPRInfo(prData, incidentId) {
+  try {
+
+    const response = await axios.post(
+      `http://88.99.104.97:3001/api/pull-request`,{
+      prData,
+      incidentId,
+    });
+    // const response = await axios.post(apiUrl, {
+    //   prData,
+    //   incidentId,
+    // });
+
+    console.log('Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error sending PR info:', error.response?.data || error.message);
+    throw error;
+  }
+}
+
+
 
 function findFileUsingGrep(methodName) {
   try {

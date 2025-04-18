@@ -22,6 +22,7 @@ router.get('/correlations', controllers.getAllCorrelations);
 
 // Incident endpoints
 router.get('/incidents', controllers.getIncidents);
+router.post('/pull-request', controllers.getPRinfo);
 router.get('/incidents/:incidentId', controllers.getIncident);
 router.put('/incidents/:incidentId/status', controllers.updateIncidentStatus);
 router.post('/incidents/:incidentId/analysis', controllers.updateIncidentWithAnalysis);

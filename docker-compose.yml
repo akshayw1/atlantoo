@@ -1,14 +1,13 @@
 
 services:
-  # Telemetry collection
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
     volumes:
       - ./docker/config/otel-collector.yaml:/etc/otelcol-contrib/config.yaml
     ports:
-      - "4317:4317"  # OTLP gRPC
-      - "4318:4318"  # OTLP HTTP
-      - "8888:8888"  # Metrics
+      - "4317:4317"  
+      - "4318:4318"  
+      - "8888:8888"  
     networks:
       - observability-network
     depends_on:
@@ -107,26 +106,6 @@ services:
     networks:
       - observability-network
 
-
-  # auth-service:
-  #   build: 
-  #     context: ./services/auth-service
-  #   environment:
-  #     - NODE_ENV=development
-  #     - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-  #     - OTEL_SERVICE_NAME=auth-service
-  #     - FLUENTD_HOST=fluentd
-  #     - FLUENTD_PORT=24224
-  #     - CORRELATION_ENGINE_URL=http://correlation-engine:3001
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     - otel-collector
-  #     - fluentd
-  #     - correlation-engine
-  #   networks:
-  #     - observability-network
-
   auth-service:
       build:
         context: ./services/auth-service
@@ -177,7 +156,7 @@ services:
       - NODE_ENV=development
       - JAEGER_URL=http://jaeger:16686
       - VICTORIA_METRICS_URL=http://victoria-metrics:8428
-      - MONGODB_URL=mongodb://mongo:27017/correlation-engine
+      - MONGODB_URL=mongodb+srv://akshaywaghmarecc:moENbPMhfQa2u035@cluster0.h0kcr6g.mongodb.net/correlation-engine
       - AI_ANALYZER_URL=http://ai-analyzer:3002
       - LOG_LEVEL=debug
       - ELASTICSEARCH_URL=http://elasticsearch:9200
@@ -187,29 +166,6 @@ services:
     depends_on:
       - jaeger
       - victoria-metrics
-      - mongo
-    networks:
-      - observability-network
-
-  # MongoDB for storing correlation data
-  mongo:
-    image: mongo:6.0
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-    networks:
-      - observability-network
-
-  mongo-express:
-    image: mongo-express
-    restart: always
-    ports:
-      - "8081:8081"  # UI will be available on http://localhost:8081
-    environment:
-      ME_CONFIG_MONGODB_SERVER: mongo
-    depends_on:
-      - mongo
     networks:
       - observability-network
 
@@ -221,11 +177,11 @@ services:
       - PORT=3002
       - DEBUG_MODE=true
       - GEMINI_API_KEY=AIzaSyCcTsDBMal4lRkGCjxy6dIwFcaWGRG4ntU
-      - MONGODB_URL=mongodb://mongo:27017/ai-analyzer
+      - MONGODB_URL=mongodb+srv://akshaywaghmarecc:moENbPMhfQa2u035@cluster0.h0kcr6g.mongodb.net/ai-analyzer
       - CORRELATION_ENGINE_URL=http://correlation-engine:3001
       - SMTP_SERVER=smtp.gmail.com
       - SMTP_PORT=587
-      - SMTP_USERNAME=akshayywaghmaree@gmail.com
+      - SMTP_USERNAME=akshayywaghmaree@gmail.comxp
       - SMTP_PASSWORD=sfnt ffqr pcdc oras
       - NOTIFICATION_FROM=paulsanjaym@gmail.com
       - GITHUB_TOKEN=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
@@ -237,7 +193,6 @@ services:
       - ./services/ai-analyzer:/app
     depends_on:
       - correlation-engine
-      - mongo
     networks:
       - observability-network
 
@@ -274,5 +229,4 @@ volumes:
   elasticsearch-data:
   victoria-metrics-data:
   grafana-data:
-  mongo-data:
 

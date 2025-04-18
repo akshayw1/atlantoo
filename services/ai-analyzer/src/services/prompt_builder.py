@@ -532,7 +532,16 @@ class PromptBuilder:
             "source": "ai",
             "implementationStatus": "proposed",
             "createdAt": "ISO 8601 string",
-            "updatedAt": "ISO 8601 string"
+            "updatedAt": "ISO 8601 string",
+            "errorLocation": {
+            "service": "string",
+            "file": "string",
+            "className": "string",
+            "methodName": "string",
+            "lineNumber": 0,
+            "exceptionType": "string",
+            "exceptionMessage": "string"
+          },
           }
         ]
       }

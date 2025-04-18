@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const { Schema } = mongoose;
+const { ObjectId } = mongoose.Schema.Types;
 
 const AnomalySchema = new mongoose.Schema({
   type: String,
@@ -85,6 +87,20 @@ const IncidentSchema = new mongoose.Schema({
     enum: ['anomaly_detection', 'manual', 'correlation'],
     default: 'anomaly_detection'
   },
+  errorLocation: {
+    service: { type: String },
+    file: { type: String },
+    className: { type: String },
+    methodName: { type: String },
+    lineNumber: { type: Number },
+    exceptionType: { type: String },
+    exceptionMessage: { type: String }
+  },
+  pullRequestInfo: {
+    type: {
+      type: Schema.Types.Mixed, 
+    default: null
+    }},
   aiEnhancedTitle: String,
   aiDescription: String,
   rootCauseHypothesis: String,

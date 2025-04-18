@@ -686,67 +686,79 @@ class CorrelationService {
     }
   }
 
-  // Trigger AI solution analysis
   async _triggerAISolutionAnalysis(incidentId) {
     try {
       logger.info(`Requesting AI solution analysis for incident ${incidentId}`);
-
+  
       const response = await axios.post(
-        `${this.aiAnalyzerUrl}/api/analyze/incidents/${incidentId}`
+        `${this.aiAnalyzerUrl}/api/analyze/incidents/${incidentId}`,
+        {}, 
+        { timeout: 35000 } // 35 seconds timeout
       );
-
-      if (response.data && response.data.solutions) {
-        // Update the incident with solutions
-        await this._updateIncidentWithSolutions(
-          incidentId,
-          response.data.solutions,
-          response.data.enhancedRootCause
-        );  
-
-        console.log('AI solutions:', response.data.solutions);
-
-        logger.info(`Updated incident ${incidentId} with ${response.data.solutions.length} solutions`);
+  
+      if (response.data) {
+        const { solutions, enhancedRootCause, errorLocation } = response.data;
+  
+        if (solutions && solutions.length > 0) {
+          // Update the incident with solutions and error location
+          await this._updateIncidentWithSolutions(
+            incidentId,
+            solutions,
+            enhancedRootCause,
+            errorLocation
+          );
+  
+          logger.info(`Updated incident ${incidentId} with ${solutions.length} solutions`);
+        } else {
+          logger.warn(`No solutions returned for incident ${incidentId}`);
+        }
+  
+        return response.data;
       } else {
-        logger.warn(`No solutions returned for incident ${incidentId}`);
+        logger.warn(`No response data received for incident ${incidentId}`);
+        return null;
       }
-
-      return response.data;
     } catch (error) {
       logger.error(`Error triggering AI solution analysis: ${error.message}`);
       return null;
     }
   }
 
-  // Update incident with solutions
-  async _updateIncidentWithSolutions(incidentId, solutions, enhancedRootCause) {
+  async _updateIncidentWithSolutions(incidentId, solutions, enhancedRootCause, errorLocation) {
     try {
-      // Find the incident
+      logger.info(`Updating incident ${incidentId} with AI solutions`);
+  
       const incident = await Incident.findById(incidentId);
       if (!incident) {
         throw new Error(`Incident ${incidentId} not found`);
       }
-
-      // Update with solutions
+  
+      // Map solutions
       incident.solutions = solutions.map(solution => ({
         description: solution.description,
         steps: solution.steps || [],
-        confidence: solution.confidence || 0.5,
+        confidence: solution.confidence ?? 0.5,
         source: 'ai',
         implementationStatus: 'proposed'
       }));
-
-      // Mark as having solutions
+  
       incident.hasSolutions = true;
-
-      // Update root cause if improved
+  
+      // Update root cause if enhanced
       if (enhancedRootCause) {
         incident.rootCauseHypothesis = enhancedRootCause;
       }
-
-      // Update status to investigating
+  
+      // Update error location if provided
+      if (errorLocation) {
+        incident.errorLocation = errorLocation;
+      }
+  
+      // Update status
       incident.status = 'investigating';
-
+  
       await incident.save();
+      logger.info(`Incident ${incidentId} updated successfully`);
       return incident;
     } catch (error) {
       logger.error(`Error updating incident with solutions: ${error.message}`);

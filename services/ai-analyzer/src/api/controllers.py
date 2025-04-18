@@ -39,6 +39,30 @@ async def analyze_incident(incident_id: str) -> Dict[str, Any]:
     
     return result
 
+
+async def trigger_auto_fix(incident_id: str) -> Dict[str, Any]:
+    """
+    Trigger an auto-fix for an incident based on analysis
+    """
+    logger.info(f"Triggering PR initial: {incident_id}")
+    
+    result = await analyzer_service._trigger_github_fix(incident_id)
+    
+    # Check if result is None
+    if result is None:
+        logger.warning(f"Received None result from _trigger_github_fix for incident {incident_id}")
+        return {"status": "error", "message": "Auto-fix process returned no result"}
+    
+    # Then check for errors
+    if isinstance(result, dict) and "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    logger.info(f"Trigger analysis done and PR created")
+    
+    return result
+
+
+
 async def analyze_solutions(request_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Generate solutions for an incident based on analysis

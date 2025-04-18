@@ -202,6 +202,8 @@ class AnalyzerService:
             # 5. Store the analysis result
             saved_result = await save_analysis_result(analysis_result)
             
+            print(f"Analysis result saved in db")
+            
             # 6. Update the incident with analysis results
             await update_incident_with_analysis(incident_id, saved_result)
             
@@ -213,9 +215,9 @@ class AnalyzerService:
             if analysis_result.get("rootCauses") or analysis_result.get("priority") == "high":
                 await notification_service.send_analysis_notification(analysis_result)
                 
-            # 8. Check if we should trigger a GitHub workflow for auto-fix
-            if self._should_trigger_github_fix(analysis_result):
-                await self._trigger_github_fix(incident_id)
+            # # 8. Check if we should trigger a GitHub workflow for auto-fix
+            # if self._should_trigger_github_fix(analysis_result):
+            #     await self._trigger_github_fix(incident_id)
             
             return analysis_result
             
