@@ -43,13 +43,15 @@ exports.correlateByTraceId = async (req, res) => {
 
 exports.getPRinfo = async (req, res) => {
   try {
-    const { prData, incidentId } = req.body;
+    const { prInfo, incidentId } = req.body;
 
     // Validate presence
-    if (!prData || !incidentId) {
+    if (!prInfo || !incidentId) {
       return res.status(400).json({ error: 'Missing prData or incidentId' });
     }
 
+    console.log('Received PR info:', prInfo);
+    console.log('Received incidentId:', incidentId);
     // Validate incident exists
     const incident = await Incident.findById(incidentId);
     if (!incident) {
@@ -57,10 +59,10 @@ exports.getPRinfo = async (req, res) => {
     }
 
     // Store PR info
-    incident.pullRequestInfo = prData;
+    incident.pullRequestInfo = prInfo;
     await incident.save();
 
-    res.status(200).json({ message: 'PR info saved successfully', prInfo: prData });
+    res.status(200).json({ message: 'PR info saved successfully', prInfo: prInfo });
   } catch (error) {
     logger.error(`Error in getPRinfo: ${error.message}`);
     res.status(500).json({ error: 'Internal server error' });

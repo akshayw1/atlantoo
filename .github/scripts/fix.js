@@ -89,12 +89,12 @@ async function main() {
 }
 
 
-async function sendPRInfo(prData, incidentId) {
+async function sendPRInfo(prInfo, incidentId) {
   try {
 
     const response = await axios.post(
       `http://88.99.104.97:3001/api/pull-request`,{
-      prData,
+      prInfo,
       incidentId,
     });
 
