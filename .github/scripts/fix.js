@@ -42,12 +42,12 @@ async function main() {
     execSync(`git checkout -b ${branchName}`);
     
     // Find the file containing the method
-    const { className, methodName, file } = errorLocation;
-    console.log(`Looking for file containing ${className}.${methodName}`);
+    const { methodName } = errorLocation;
+    console.log(`Looking for file containing method: ${methodName}`);
     
-    const filePath = await findFile(file);
+    const filePath = findFileUsingGrep(methodName);
     if (!filePath) {
-      throw new Error(`Could not find file: ${file}`);
+      throw new Error(`Could not find file containing method: ${methodName}`);
     }
     
     console.log(`Found file at: ${filePath}`);
@@ -86,6 +86,35 @@ async function main() {
   } catch (error) {
     console.error(`Error processing incident: ${error.message}`);
     process.exit(1);
+  }
+}
+
+function findFileUsingGrep(methodName) {
+  try {
+    // Using grep to find the file with the method name
+    const grepResult = execSync(`grep -r "${methodName}" --include="*.java" .`).toString();
+    console.log(`grep result: ${grepResult}`);
+    
+    // Parse the grep output to extract the file path
+    const lines = grepResult.split('\n').filter(line => line.trim() !== '');
+    
+    // Look for non-binary matches
+    for (const line of lines) {
+      // Skip binary files
+      if (line.includes('Binary file')) continue;
+      
+      // Extract the file path from the grep result
+      // Format is typically: ./path/to/file.java:content
+      const filePath = line.split(':')[0];
+      if (filePath && fs.existsSync(filePath)) {
+        return filePath;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`Error using grep: ${error.message}`);
+    return null;
   }
 }
 
