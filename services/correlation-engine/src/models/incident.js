@@ -96,11 +96,7 @@ const IncidentSchema = new mongoose.Schema({
     exceptionType: { type: String },
     exceptionMessage: { type: String }
   },
-  pullRequestInfo: {
-    type: {
-      type: String, 
-    default: null
-    }},
+  pullRequestInfo: String,
   aiEnhancedTitle: String,
   aiDescription: String,
   rootCauseHypothesis: String,

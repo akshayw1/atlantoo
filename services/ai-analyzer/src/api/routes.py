@@ -6,10 +6,19 @@ from services.analyzer import analyzer_service
 from services.gemini_client import gemini_client
 from services.prompt_builder import prompt_builder
 
+from db.repositories import get_all_analysis_resultss
+
 
 from api.controllers import analyze_correlation, analyze_incident, detect_anomaly,analyze_solutions,trigger_auto_fix
 logger = logging.getLogger("ai-analyzer.routes")
 router = APIRouter()
+
+
+@router.get("/analysis", response_model=list[dict])
+async def get_all_analysis_results():
+    
+        return await get_all_analysis_resultss()
+
 
 @router.post("/analyze/correlation/{correlation_id}")
 async def analyze_correlation_route(

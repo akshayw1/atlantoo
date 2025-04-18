@@ -550,6 +550,7 @@ class PromptBuilder:
 
     # Notes
     - The `solutions` array must follow the provided schema, with `source` set to "ai" and `implementationStatus` set to "proposed".
+    - In case of any valid errorLocation not available, all value should be "Unknown" Only Strictly follow the format.
     - Use the current timestamp (ISO 8601 format) for `createdAt` and `updatedAt` in each solution.
     - Ensure `evidenceReferences` only includes logs, as metrics and traces are not provided.
     - Focus on solutions that directly address the issues identified in the logs, and given anomalies.

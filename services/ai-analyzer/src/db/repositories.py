@@ -283,3 +283,21 @@ async def update_analysis_with_solutions(analysis_id: str, solutions: List[Dict[
     except Exception as e:
         logger.error(f"Error updating analysis with solutions: {str(e)}")
         return False
+    
+async def get_all_analysis_resultss() -> list[Dict[str, Any]]:
+    """
+    Get all analysis results from the collection
+    """
+    
+    collection = mongodb.get_collection("analysis_results")
+        
+    try:
+        cursor = collection.find({})
+        results = []
+        for doc in cursor:
+            doc["_id"] = str(doc["_id"])
+            results.append(doc)
+        return results
+    except Exception as e:
+        logger.error(f"Error fetching all analysis results: {str(e)}")
+        return []

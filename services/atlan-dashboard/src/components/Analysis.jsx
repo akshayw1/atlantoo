@@ -1,4 +1,3 @@
-// src/components/Analysis.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -17,20 +16,21 @@ import {
   Chip,
   CircularProgress,
   Alert,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  Divider,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
-  Psychology as PsychologyIcon,
   BugReport as BugIcon,
-  Build as BuildIcon,
   Lightbulb as LightbulbIcon,
   Circle as CircleIcon,
   ArrowRight as ArrowRightIcon,
+  ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import api from '../services/api';
 
@@ -42,17 +42,15 @@ const Analysis = () => {
 
   useEffect(() => {
     fetchAnalyses();
+    console.log('Fetching analyses...');
   }, []);
 
   const fetchAnalyses = async () => {
     try {
       setLoading(true);
       setError(null);
-      // Since we're using a mock API for now, we'll use dummy data
-      // In a real implementation, you would uncomment this line:
-      // const response = await api.getAnalyses();
-      const mockAnalyses = generateMockAnalyses();
-      setAnalyses(mockAnalyses);
+      const response = await api.getAnalyses();
+      setAnalyses(response.data);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching analyses:', err);
@@ -64,11 +62,8 @@ const Analysis = () => {
   const handleSelectAnalysis = async (analysisId) => {
     try {
       setLoading(true);
-      // Since we're using a mock API for now, we'll use dummy data
-      // In a real implementation, you would uncomment this line:
-      // const response = await api.getAnalysis(analysisId);
-      const selectedAnalysis = analyses.find(analysis => analysis._id === analysisId);
-      setSelectedAnalysis(selectedAnalysis);
+      const response = await api.getAnalysis(analysisId);
+      setSelectedAnalysis(response.data);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching analysis details:', err);
@@ -77,20 +72,6 @@ const Analysis = () => {
     }
   };
 
-  const triggerAnalysisForCorrelation = async (correlationId) => {
-    try {
-      setLoading(true);
-      await api.analyzeCorrelation(correlationId);
-      await fetchAnalyses();
-      setLoading(false);
-    } catch (err) {
-      console.error('Error triggering analysis:', err);
-      setError('Failed to trigger analysis. Please try again later.');
-      setLoading(false);
-    }
-  };
-
-  // Helper to generate confidence color
   const getConfidenceColor = (confidence) => {
     if (confidence >= 0.8) return 'success';
     if (confidence >= 0.6) return 'info';
@@ -98,116 +79,19 @@ const Analysis = () => {
     return 'error';
   };
 
-  // Helper to generate priority color
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high':
+  const getSeverityColor = (severity) => {
+    switch (severity?.toLowerCase()) {
+      case 'critical':
         return 'error';
-      case 'medium':
+      case 'high':
         return 'warning';
-      case 'low':
+      case 'medium':
         return 'info';
+      case 'low':
+        return 'default';
       default:
         return 'default';
     }
-  };
-
-  // Generate mock analyses data
-  const generateMockAnalyses = () => {
-    return [
-      {
-        _id: 'analysis1',
-        correlationId: 'correlation1',
-        incidentId: 'incident1',
-        serviceName: 'auth-service',
-        analysisType: 'root-cause',
-        createdAt: new Date().toISOString(),
-        rootCauses: [
-          {
-            cause: 'High database connection pool utilization',
-            confidence: 0.85,
-            evidence: [
-              'Latency spike in database operations',
-              'Connection timeout errors in logs',
-              'High number of pending requests'
-            ]
-          },
-          {
-            cause: 'Memory pressure on service instance',
-            confidence: 0.65,
-            evidence: [
-              'Increasing memory usage trend',
-              'Occasional garbage collection pauses',
-              'Slower response times across all endpoints'
-            ]
-          }
-        ],
-        affectedServices: ['auth-service', 'database'],
-        priority: 'high',
-        confidence: 0.85,
-        solutions: [
-          {
-            title: 'Increase database connection pool size',
-            description: 'The current connection pool size is insufficient for the current load, leading to connection timeouts.',
-            steps: [
-              'Increase hikariCP maxPoolSize from 10 to 20',
-              'Adjust idle timeout to 600000ms (10 minutes)',
-              'Apply changes via configuration update'
-            ],
-            confidence: 0.9,
-            impact: 'medium',
-            category: 'configuration'
-          },
-          {
-            title: 'Scale up service instances',
-            description: 'Current instances are experiencing memory pressure due to high load.',
-            steps: [
-              'Increase replica count from 2 to 3',
-              'Monitor memory usage after scaling'
-            ],
-            confidence: 0.7,
-            impact: 'medium',
-            category: 'scaling'
-          }
-        ]
-      },
-      {
-        _id: 'analysis2',
-        correlationId: 'correlation2',
-        incidentId: 'incident2',
-        serviceName: 'service-b',
-        analysisType: 'root-cause',
-        createdAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-        rootCauses: [
-          {
-            cause: 'Network latency between services',
-            confidence: 0.75,
-            evidence: [
-              'Increased response times for external calls',
-              'Timeout errors in service communication',
-              'Normal CPU and memory utilization'
-            ]
-          }
-        ],
-        affectedServices: ['service-b', 'service-c'],
-        priority: 'medium',
-        confidence: 0.75,
-        solutions: [
-          {
-            title: 'Implement circuit breaker pattern',
-            description: 'Prevent cascading failures due to network issues.',
-            steps: [
-              'Add resilience4j circuit breaker to service-b',
-              'Configure fallback behavior for external calls',
-              'Set appropriate timeout thresholds'
-            ],
-            confidence: 0.85,
-            impact: 'medium',
-            category: 'code'
-          }
-        ]
-      }
-    ];
   };
 
   if (loading && !selectedAnalysis && analyses.length === 0) {
@@ -219,21 +103,24 @@ const Analysis = () => {
   }
 
   return (
-    <Box p={3}>
+    <Box p={3} sx={{ bgcolor: 'background.default' }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">AI Analysis</Typography>
+        <Typography variant="h4" color="primary">
+          AI Analysis Dashboard
+        </Typography>
         <Button
-          variant="outlined"
+          variant="contained"
+          color="primary"
           startIcon={<RefreshIcon />}
           onClick={fetchAnalyses}
-          sx={{ mr: 1 }}
+          sx={{ borderRadius: 2 }}
         >
           Refresh
         </Button>
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
           {error}
         </Alert>
       )}
@@ -241,12 +128,14 @@ const Analysis = () => {
       <Grid container spacing={3}>
         {/* Analysis List */}
         <Grid item xs={12} md={selectedAnalysis ? 4 : 12}>
-          <Paper sx={{ p: 2, height: '100%' }}>
-            <Typography variant="h6" gutterBottom>
+          <Paper sx={{ p: 2, borderRadius: 2, boxShadow: 3 }}>
+            <Typography variant="h6" gutterBottom color="text.primary">
               Recent Analysis Results
             </Typography>
             {analyses.length === 0 ? (
-              <Alert severity="info">No analysis results found. Trigger an analysis for a correlation to get started.</Alert>
+              <Alert severity="info" sx={{ borderRadius: 2 }}>
+                No analysis results found.
+              </Alert>
             ) : (
               <TableContainer>
                 <Table>
@@ -254,7 +143,7 @@ const Analysis = () => {
                     <TableRow>
                       <TableCell>Service</TableCell>
                       <TableCell>Time</TableCell>
-                      <TableCell>Priority</TableCell>
+                      <TableCell>Severity</TableCell>
                       <TableCell>Confidence</TableCell>
                     </TableRow>
                   </TableHead>
@@ -265,25 +154,26 @@ const Analysis = () => {
                         hover
                         selected={selectedAnalysis?._id === analysis._id}
                         onClick={() => handleSelectAnalysis(analysis._id)}
-                        sx={{ cursor: 'pointer' }}
+                        sx={{ cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
                       >
                         <TableCell>{analysis.serviceName}</TableCell>
                         <TableCell>{new Date(analysis.createdAt).toLocaleString()}</TableCell>
                         <TableCell>
-                          <Chip 
-                            label={analysis.priority} 
+                          <Chip
+                            label={analysis.summary.severity}
                             size="small"
-                            color={getPriorityColor(analysis.priority)} 
+                            color={getSeverityColor(analysis.summary.severity)}
+                            sx={{ borderRadius: 1 }}
                           />
                         </TableCell>
                         <TableCell>
                           <Box display="flex" alignItems="center">
-                            <CircleIcon 
-                              fontSize="small" 
-                              color={getConfidenceColor(analysis.confidence)} 
+                            <CircleIcon
+                              fontSize="small"
+                              color={getConfidenceColor(analysis.summary.confidence)}
                               sx={{ mr: 1 }}
                             />
-                            {Math.round(analysis.confidence * 100)}%
+                            {Math.round(analysis.summary.confidence * 100)}%
                           </Box>
                         </TableCell>
                       </TableRow>
@@ -298,13 +188,13 @@ const Analysis = () => {
         {/* Analysis Details */}
         {selectedAnalysis && (
           <Grid item xs={12} md={8}>
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Analysis Results
+            <Paper sx={{ p: 2, borderRadius: 2, boxShadow: 3 }}>
+              <Typography variant="h6" gutterBottom color="text.primary">
+                Analysis Details
               </Typography>
-              <Card sx={{ mb: 3 }}>
+              <Card sx={{ mb: 3, borderRadius: 2, boxShadow: 2 }}>
                 <CardContent>
-                  <Typography variant="subtitle1" gutterBottom>
+                  <Typography variant="subtitle1" gutterBottom color="text.primary">
                     Overview
                   </Typography>
                   <Grid container spacing={2}>
@@ -316,121 +206,150 @@ const Analysis = () => {
                         <strong>Service:</strong> {selectedAnalysis.serviceName}
                       </Typography>
                       <Typography variant="body2">
-                        <strong>Correlation ID:</strong> {selectedAnalysis.correlationId}
-                      </Typography>
-                      <Typography variant="body2">
-                        <strong>Incident ID:</strong> {selectedAnalysis.incidentId}
+                        <strong>Time Range:</strong>{' '}
+                        {new Date(selectedAnalysis.timeRange.start).toLocaleString()} -{' '}
+                        {new Date(selectedAnalysis.timeRange.end).toLocaleString()}
                       </Typography>
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Typography variant="body2">
-                        <strong>Time:</strong> {new Date(selectedAnalysis.createdAt).toLocaleString()}
+                        <strong>Created At:</strong>{' '}
+                        {new Date(selectedAnalysis.createdAt).toLocaleString()}
                       </Typography>
                       <Typography variant="body2">
-                        <strong>Priority:</strong> <Chip label={selectedAnalysis.priority} size="small" color={getPriorityColor(selectedAnalysis.priority)} />
+                        <strong>Severity:</strong>{' '}
+                        <Chip
+                          label={selectedAnalysis.summary.severity}
+                          size="small"
+                          color={getSeverityColor(selectedAnalysis.summary.severity)}
+                          sx={{ borderRadius: 1 }}
+                        />
                       </Typography>
                       <Typography variant="body2">
-                        <strong>Confidence:</strong> {Math.round(selectedAnalysis.confidence * 100)}%
-                      </Typography>
-                      <Typography variant="body2">
-                        <strong>Affected Services:</strong> {selectedAnalysis.affectedServices.join(', ')}
+                        <strong>Confidence:</strong>{' '}
+                        {Math.round(selectedAnalysis.summary.confidence * 100)}%
                       </Typography>
                     </Grid>
                   </Grid>
                 </CardContent>
               </Card>
 
-              {/* Root Causes */}
+              {/* Anomalies */}
+              <Accordion sx={{ mb: 2, borderRadius: 2, boxShadow: 1 }}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Box display="flex" alignItems="center">
+                    <BugIcon sx={{ mr: 1, color: 'error.main' }} />
+                    <Typography variant="subtitle1">Anomalies</Typography>
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails>
+                  {selectedAnalysis.anomalies.map((anomaly, index) => (
+                    <Card key={index} sx={{ mb: 2, borderRadius: 2, boxShadow: 1 }}>
+                      <CardContent>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                          <Typography variant="subtitle2">{anomaly.description}</Typography>
+                          <Chip
+                            label={`${Math.round(anomaly.confidence * 100)}% confidence`}
+                            size="small"
+                            color={getConfidenceColor(anomaly.confidence)}
+                            sx={{ borderRadius: 1 }}
+                          />
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" mb={1}>
+                          <strong>Type:</strong> {anomaly.type}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" mb={1}>
+                          <strong>Severity:</strong> {anomaly.severity}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" mb={1}>
+                          <strong>Timestamp:</strong> {new Date(anomaly.timestamp).toLocaleString()}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" mb={1}>
+                          <strong>Detection Logic:</strong> {anomaly.detectionLogic}
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                          Evidence:
+                        </Typography>
+                        <List dense>
+                          {anomaly.evidenceReferences.logs.map((log, idx) => (
+                            <ListItem key={idx}>
+                              <ListItemIcon sx={{ minWidth: '30px' }}>
+                                <ArrowRightIcon fontSize="small" />
+                              </ListItemIcon>
+                              <ListItemText primary={log} secondary="Log" />
+                            </ListItem>
+                          ))}
+                          {anomaly.evidenceReferences.traces.map((trace, idx) => (
+                            <ListItem key={idx}>
+                              <ListItemIcon sx={{ minWidth: '30px' }}>
+                                <ArrowRightIcon fontSize="small" />
+                              </ListItemIcon>
+                              <ListItemText primary={trace} secondary="Trace ID" />
+                            </ListItem>
+                          ))}
+                        </List>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </AccordionDetails>
+              </Accordion>
+
+              {/* Summary */}
               <Typography variant="subtitle1" gutterBottom>
                 <Box display="flex" alignItems="center">
-                  <BugIcon sx={{ mr: 1 }} />
-                  Root Causes
+                  <LightbulbIcon sx={{ mr: 1, color: 'warning.main' }} />
+                  Summary
                 </Box>
               </Typography>
-              {selectedAnalysis.rootCauses.map((cause, index) => (
-                <Card key={index} sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                      <Typography variant="subtitle2">{cause.cause}</Typography>
-                      <Chip 
-                        label={`${Math.round(cause.confidence * 100)}% confidence`} 
-                        size="small" 
-                        color={getConfidenceColor(cause.confidence)} 
-                      />
-                    </Box>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Evidence:</Typography>
-                    <List dense>
-                      {cause.evidence.map((evidence, idx) => (
-                        <ListItem key={idx}>
-                          <ListItemIcon sx={{ minWidth: '30px' }}>
-                            <ArrowRightIcon fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText primary={evidence} />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </CardContent>
-                </Card>
-              ))}
+              <Card sx={{ mb: 3, borderRadius: 2, boxShadow: 1 }}>
+                <CardContent>
+                  <Typography variant="subtitle2" gutterBottom>
+                    {selectedAnalysis.summary.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" mb={2}>
+                    {selectedAnalysis.summary.description}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    Root Cause Hypothesis:
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" mb={2}>
+                    {selectedAnalysis.summary.rootCauseHypothesis}
+                  </Typography>
+                </CardContent>
+              </Card>
 
-              <Divider sx={{ my: 3 }} />
-
-              {/* Solutions */}
-              <Typography variant="subtitle1" gutterBottom>
-                <Box display="flex" alignItems="center">
-                  <LightbulbIcon sx={{ mr: 1 }} />
-                  Recommended Solutions
-                </Box>
-              </Typography>
-              {selectedAnalysis.solutions.map((solution, index) => (
-                <Card key={index} sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
-                      <Typography variant="subtitle2">{solution.title}</Typography>
-                      <Box>
-                        <Chip 
-                          label={`${Math.round(solution.confidence * 100)}% confidence`} 
-                          size="small" 
-                          color={getConfidenceColor(solution.confidence)} 
-                          sx={{ mr: 0.5 }}
-                        />
-                        <Chip 
-                          label={`${solution.impact} impact`} 
-                          size="small" 
-                          color={solution.impact === 'high' ? 'error' : solution.impact === 'medium' ? 'warning' : 'info'} 
-                          sx={{ mr: 0.5 }}
-                        />
-                        <Chip 
-                          label={solution.category} 
-                          size="small" 
-                          variant="outlined"
-                        />
-                      </Box>
-                    </Box>
-                    <Typography variant="body2" sx={{ mb: 2 }}>{solution.description}</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Implementation Steps:</Typography>
-                    <List dense>
-                      {solution.steps.map((step, idx) => (
-                        <ListItem key={idx}>
-                          <ListItemIcon sx={{ minWidth: '30px' }}>
-                            <BuildIcon fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText primary={step} />
-                        </ListItem>
-                      ))}
-                    </List>
-                    <Box display="flex" justifyContent="flex-end" mt={1}>
-                      <Button 
-                        variant="outlined" 
-                        size="small"
-                        onClick={() => window.alert('Remediation approved! This would trigger the remediation workflow in a real system.')}
-                      >
-                        Approve Remediation
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </Card>
-              ))}
+              {/* Recommended Next Steps */}
+              <Accordion sx={{ mb: 2, borderRadius: 2, boxShadow: 1 }}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Box display="flex" alignItems="center">
+                    <LightbulbIcon sx={{ mr: 1, color: 'success.main' }} />
+                    <Typography variant="subtitle1">Recommended Next Steps</Typography>
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <List dense>
+                    {selectedAnalysis.summary.recommendedNextSteps.map((step, index) => (
+                      <ListItem key={index}>
+                        <ListItemIcon sx={{ minWidth: '30px' }}>
+                          <ArrowRightIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText primary={step} />
+                      </ListItem>
+                    ))}
+                  </List>
+                  <Box display="flex" justifyContent="flex-end" mt={2}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      onClick={() => window.alert('Remediation approved! This would trigger the remediation workflow.')}
+                      sx={{ borderRadius: 2 }}
+                    >
+                      Approve Remediation
+                    </Button>
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
             </Paper>
           </Grid>
         )}
