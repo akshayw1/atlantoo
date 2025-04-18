@@ -79,7 +79,7 @@ async function main() {
     });
     
     console.log(`Successfully created PR: ${pr.data.html_url}`);
-    await sendPRInfo(pr.data, incidentId);
+    await sendPRInfo(pr.data.html_url, incidentId);
     console.log('PR info sent to server');
     
   } catch (error) {

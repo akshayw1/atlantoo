@@ -98,7 +98,7 @@ const IncidentSchema = new mongoose.Schema({
   },
   pullRequestInfo: {
     type: {
-      type: Schema.Types.Mixed, 
+      type: String, 
     default: null
     }},
   aiEnhancedTitle: String,
