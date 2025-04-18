@@ -212,12 +212,75 @@ class AnalyzerService:
             # 7. Send notification for significant findings
             if analysis_result.get("rootCauses") or analysis_result.get("priority") == "high":
                 await notification_service.send_analysis_notification(analysis_result)
+                
+            # 8. Check if we should trigger a GitHub workflow for auto-fix
+            if self._should_trigger_github_fix(analysis_result):
+                await self._trigger_github_fix(incident_id)
             
             return analysis_result
             
         except Exception as e:
             logger.error(f"Error analyzing incident {incident_id}: {str(e)}")
             return {"error": str(e)}
+        
+    def _should_trigger_github_fix(self, analysis_result: Dict[str, Any]) -> bool:
+        """
+        Determine if we should trigger a GitHub workflow based on analysis results
+        """
+        # Check for error location information
+        error_location = analysis_result.get("errorLocation", {})
+        if (error_location.get("file", "Unknown") == "Unknown" or
+            error_location.get("className", "Unknown") == "Unknown" or
+            error_location.get("methodName", "Unknown") == "Unknown"):
+            logger.info("Not triggering GitHub fix: Insufficient error location information")
+            return False
+        
+        # Check for confidence score
+        confidence = analysis_result.get("confidence", 0)
+        if confidence < 0.85:
+            logger.info(f"Not triggering GitHub fix: Confidence score too low ({confidence})")
+            return False
+        
+        logger.info("Triggering GitHub fix: Error location available with high confidence")
+        return True
+    
+        
+    async def _trigger_github_fix(self, incident_id: str) -> None:
+        """
+        Trigger GitHub workflow to create a fix
+        """
+        try:
+            github_token = settings.github_token
+            github_repo = settings.github_repo
+            github_owner = settings.github_owner
+            
+            if not github_token or not github_repo or not github_owner:
+                logger.error("GitHub configuration missing, can't trigger workflow")
+                return
+            
+            url = f"https://api.github.com/repos/{github_owner}/{github_repo}/dispatches"
+            headers = {
+                "Accept": "application/vnd.github.v3+json",
+                "Authorization": f"Bearer {github_token}",
+                "Content-Type": "application/json"
+            }
+            data = {
+                "event_type": "new_incident",
+                "client_payload": {
+                    "incidentId": incident_id
+                }
+            }
+            
+            logger.info(f"Triggering GitHub workflow for incident {incident_id}")
+            response = requests.post(url, headers=headers, json=data)
+            
+            if response.status_code == 204:
+                logger.info("GitHub workflow triggered successfully")
+            else:
+                logger.error(f"Failed to trigger GitHub workflow: {response.status_code} {response.text}")
+        
+        except Exception as e:
+            logger.error(f"Error triggering GitHub workflow: {str(e)}")
     
     async def generate_incident_solutions(self, incident_id: str, correlation_id: str = None) -> Dict[str, Any]:
         """

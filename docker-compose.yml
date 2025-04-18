@@ -228,6 +228,7 @@ services:
       - SMTP_USERNAME=akshayywaghmaree@gmail.com
       - SMTP_PASSWORD=sfnt ffqr pcdc oras
       - NOTIFICATION_FROM=paulsanjaym@gmail.com
+      - GITHUB_TOKEN=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
       - NOTIFICATION_RECIPIENTS=akshaywaghmarecc@gmail.com
       - DASHBOARD_URL=${DASHBOARD_URL:-http://localhost:3000}
     ports:

@@ -19,6 +19,11 @@ class Settings:
     # Correlation Engine
     correlation_engine_url: str = os.getenv("CORRELATION_ENGINE_URL", "http://88.99.104.97:3001")
 
+    # In config.py or settings.py
+    github_token = os.getenv("GITHUB_TOKEN", "")
+    github_repo = os.getenv("GITHUB_REPO", "atlantoo")
+    github_owner = os.getenv("GITHUB_OWNER", "akshayw1")
+
         # SMTP Settings for Email Notifications
     smtp_server: str = os.getenv("SMTP_SERVER", "")
     smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
